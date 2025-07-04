@@ -3,7 +3,7 @@ name: Walmart Fraud Detection Pipeline
 on:
   schedule:
     # Every 10 minutes (UTC)
-    - cron: '*/10 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
@@ -40,3 +40,6 @@ jobs:
         with:
           name: fraudsummary_csv
           path: fraudsummary.csv
+
+      - name: Print run time
+        run: date -u
