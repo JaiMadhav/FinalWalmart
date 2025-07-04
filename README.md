@@ -35,6 +35,34 @@ FinalWalmart/
 3. The machine learning model is retrained using the updated data.
 4. Predictions are applied and the database is updated.
 5. The updated CSV file and model are uploaded as artifacts or optionally committed to the repository.
+6. The fraud detection pipeline is designed to work as follows:
+
+Input Collections
+
+`customers`: Contains customer profile data. Example fields: `custid`, `name`, `phone_no`, `email`, `createdDate`.
+
+`orders`: Contains individual order data linked to a customer. Example fields: `order_id`, `custid`, `transaction_value`, `order_date`, `return_label`, `return_date`, `return_category`, `return_item_id`, `return_reason`.
+
+Processing
+
+The pipeline reads from `customers` and `orders` collections.
+
+It generates fraud-related metrics (e.g., return rates, patterns) and stores them in the `fraudsummary` collection.
+
+The machine learning model is trained on the data in `fraudsummary` and generates predictions.
+
+Output
+
+The final fraud predictions for each customer are saved in the `finalfraudsummary` collection.
+
+This collection contains fields such as `CustID`, `FraudLabel` (predicted fraud/not fraud), and `FraudProbability`.
+
+Developer Instructions
+Feed data into `customers` and `orders`
+Ensure that new or updated customer and order data is correctly inserted into these collections.
+
+Fetch data from `finalfraudsummary`
+The backend should query only `finalfraudsummary` to get fraud detection results.
 
 ## Automation
 
