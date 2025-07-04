@@ -2,7 +2,7 @@ name: Walmart Fraud Detection Pipeline
 
 on:
   schedule:
-    # Daily at 3:00 PM IST (09:30 UTC)
+    # Daily at 3:07 PM IST (09:37 UTC)
     - cron: '37 9 * * *'
   workflow_dispatch:  # Allow manual trigger
 
@@ -24,7 +24,10 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run master script
-        run: python PythonWalmartAutomate.py
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+        run: |
+          python PythonWalmartAutomate.py
 
       - name: Save model artifact
         uses: actions/upload-artifact@v4
