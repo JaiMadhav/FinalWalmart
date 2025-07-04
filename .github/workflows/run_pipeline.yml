@@ -1,12 +1,10 @@
 name: Walmart Fraud Detection Pipeline
 
 on:
-  schedule:
-    - cron: '*/5 * * * *'  # Every 5 min UTC
-  workflow_dispatch:
+  workflow_dispatch:  # Manual trigger
 
 permissions:
-  contents: write
+  contents: write  # Needed for committing and pushing changes
 
 jobs:
   run-pipeline:
@@ -16,7 +14,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          persist-credentials: true  # Keep GitHub token for push
+          persist-credentials: true  # Keeps token for push
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -33,18 +31,17 @@ jobs:
         run: |
           python PythonWalmartAutomate.py
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: fraud_detection_artifacts
-          path: |
-            fraud_detection_model.joblib
-            fraudsummary.csv
-
-      - name: Force add, commit, and push updates
+      - name: Commit model + CSV to repo
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Force add files (even if ignored in .gitignore)
           git add -f fraud_detection_model.joblib fraudsummary.csv
-          git commit -m "Auto update: model + fraudsummary.csv [run ${{ github.run_id }}]" || echo "No changes to commit"
+          
+          # Commit if there are changes
+          git commit -m "Auto update: fraud_detection_model + fraudsummary.csv [run ${{ github.run_id }}]" || echo "No changes to commit"
+          
+          # Push to the current branch
           git push
+
