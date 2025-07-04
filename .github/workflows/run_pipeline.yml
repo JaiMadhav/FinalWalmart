@@ -2,10 +2,10 @@ name: Walmart Fraud Detection Pipeline
 
 on:
   schedule:
-    - cron: '* * * * *'
+    - cron: '*/5 * * * *'
 
 permissions:
-  contents: write  # Needed to push commits
+  contents: write
 
 jobs:
   run-pipeline:
@@ -15,7 +15,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          persist-credentials: true  # Keep token to allow push
+          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@v4
