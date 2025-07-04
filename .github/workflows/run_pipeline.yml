@@ -2,12 +2,11 @@ name: Walmart Fraud Detection Pipeline
 
 on:
   schedule:
-    # Every 5 minutes (UTC)
-    - cron: '*/5 * * * *'
-  workflow_dispatch:  # Allow manual trigger
+    - cron: '*/5 * * * *'  # Every 5 min UTC
+  workflow_dispatch:
 
 permissions:
-  contents: write  # Needed for pushing code changes
+  contents: write
 
 jobs:
   run-pipeline:
@@ -16,6 +15,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          persist-credentials: true  # Keep GitHub token for push
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -32,25 +33,18 @@ jobs:
         run: |
           python PythonWalmartAutomate.py
 
-      - name: Upload model as artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: fraud_detection_model
-          path: fraud_detection_model.joblib
+          name: fraud_detection_artifacts
+          path: |
+            fraud_detection_model.joblib
+            fraudsummary.csv
 
-      - name: Upload fraudsummary.csv as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: fraudsummary_csv
-          path: fraudsummary.csv
-
-      - name: Commit and push model + CSV to repo
+      - name: Force add, commit, and push updates
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add fraud_detection_model.joblib fraudsummary.csv
-          git commit -m "Auto update: model + fraudsummary.csv [${{ github.run_id }}]" || echo "No changes to commit"
+          git add -f fraud_detection_model.joblib fraudsummary.csv
+          git commit -m "Auto update: model + fraudsummary.csv [run ${{ github.run_id }}]" || echo "No changes to commit"
           git push
-
-      - name: Print run time
-        run: date -u
