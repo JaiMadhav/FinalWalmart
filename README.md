@@ -1,6 +1,6 @@
 # FinalWalmart
 
-FinalWalmart is an automated fraud detection pipeline that processes customer and order data, computes fraud scores, trains a machine learning model, and updates predictions. The system is designed to work with MongoDB Atlas and is integrated with GitHub Actions for scheduled automation.
+FinalWalmart is an automated fraud detection that processes customer and order data, computes fraud scores, trains a machine learning model, and updates predictions. The system is designed to work with MongoDB Atlas and is integrated with GitHub Actions for scheduled automation.
 
 ## Overview
 
