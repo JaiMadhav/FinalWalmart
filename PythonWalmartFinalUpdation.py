@@ -4,17 +4,14 @@ import pandas as pd
 import joblib
 import os
 
-# MongoDB connection
 uri = os.getenv("MONGO_URI")
 client = MongoClient(uri, server_api=ServerApi('1'))
 db = client["WalmartDatabase"]
 fraudsummary = db["fraudsummary"]
 finalfraudsummary = db["finalfraudsummary"]
 
-# Load saved ML model
 model = joblib.load('fraud_detection_model.joblib')
 
-# Feature columns as expected by the model
 FEATURE_COLUMNS = [
     'TotalOrders', 'TotalReturns',
     'AOV', 'ARV', 'AccountAge', 'Rwinabuse','Rhighvalueabuse',
@@ -23,24 +20,19 @@ FEATURE_COLUMNS = [
     'FraudScore'
 ]
 
-# Process each document
-# Get model's expected feature names
 expected_features = list(model.feature_names_in_)
 
 for doc in fraudsummary.find():
     custid = doc['CustID']
 
-    # Build DataFrame matching model's expected columns
     features_df = pd.DataFrame(
         [[doc.get(col, 0) for col in expected_features]],
         columns=expected_features
     )
 
-    # Apply ML model
     pred_label = model.predict(features_df)[0]
     pred_prob = model.predict_proba(features_df)[0][1]
-
-    # Update finalfraudsummary
+    
     finalfraudsummary.update_one(
         {'CustID': custid},
         {'$set': {
@@ -49,6 +41,4 @@ for doc in fraudsummary.find():
         }},
         upsert=True
     )
-
-
-print("✅ All customers processed. `finalfraudsummary` updated with ML predictions.")
+print("All customers processed. `finalfraudsummary` updated with ML predictions.")
