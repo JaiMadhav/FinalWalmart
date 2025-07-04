@@ -6,15 +6,14 @@ import string
 from rapidfuzz import process, fuzz
 import os
 
-# MongoDB connection URI
 uri = os.getenv("MONGO_URI")
 client = MongoClient(uri, server_api=ServerApi('1'))
 
 try:
     client.admin.command('ping')
-    print("✅ Successfully connected to MongoDB!")
+    print("Successfully connected to MongoDB!")
 except Exception as e:
-    print(f"❌ Connection failed: {e}")
+    print(f"Connection failed: {e}")
     exit()
 
 db = client["WalmartDatabase"]
@@ -82,7 +81,7 @@ def compute_fraud_score(row):
     )
     return raw_score + prop_score
 
-print(f"🔄 Running fraud summary update at {datetime.now()}")
+print(f"Running fraud summary update at {datetime.now()}")
 today = datetime.now()
 
 for cust in customers.find():
@@ -170,6 +169,6 @@ for cust in customers.find():
 
     df = pd.DataFrame(list(cursor))
     df.to_csv('fraudsummary.csv', index=False)
-    print("✅ Exported fraudsummary.csv successfully.")
+    print("Exported fraudsummary.csv successfully.")
 
-print("✅ Fraud summary updated in MongoDB.")
+print("Fraud summary updated in MongoDB.")
