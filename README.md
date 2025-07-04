@@ -38,7 +38,6 @@ FinalWalmart/
 
 ## Automation
 
-* The workflow is scheduled to run daily at 16:36 IST (11:06 UTC).
 * Manual execution is available through GitHub Actions.
 
 ## Setup Requirements
