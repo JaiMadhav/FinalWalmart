@@ -27,9 +27,9 @@ def run_scripts():
     Run your 3 Python scripts in sequence
     """
     print(f"⚡ New customers found at {datetime.now()}, running scripts...")
-    subprocess.run(["python", "C:\\Users\\BIT\\AppData\\Local\\Programs\\Python\\Python312\\PythonWalmartDatabase.py"])
-    subprocess.run(["python", "C:\\Users\\BIT\\AppData\\Local\\Programs\\Python\\Python312\\PythonWalmartMLModel.py"])
-    subprocess.run(["python", "C:\\Users\\BIT\\AppData\\Local\\Programs\\Python\\Python312\\PythonWalmartFinalUpdation.py"])
+    subprocess.run(["python", "PythonWalmartDatabase.py"], check=True)
+    subprocess.run(["python", "PythonWalmartMLModel.py"], check=True)
+    subprocess.run(["python", "PythonWalmartFinalUpdation.py"], check=True)
     print("✅ All scripts executed.")
 
 if __name__ == "__main__":
@@ -39,4 +39,3 @@ if __name__ == "__main__":
         run_scripts()
     else:
         print("👍 No new customers needing processing.")
-
