@@ -4,9 +4,10 @@ from datetime import datetime
 import pandas as pd
 import string
 from rapidfuzz import process, fuzz
+import os
 
 # MongoDB connection URI
-uri = "mongodb+srv://jaimadhav2005:yoxZ0iSbghytySat@walmartdatabase.mwxoffr.mongodb.net/?retryWrites=true&w=majority&appName=WalmartDatabase"
+uri = os.getenv("MONGO_URI")
 client = MongoClient(uri, server_api=ServerApi('1'))
 
 try:
