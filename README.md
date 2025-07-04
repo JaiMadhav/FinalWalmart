@@ -60,11 +60,11 @@ This collection contains fields such as `CustID`, `FraudLabel` (predicted fraud/
 ## Developer Instructions
 Feed data into `customers` and `orders`
 
-Ensure that new or updated customer and order data is correctly inserted into these collections.
+* Ensure that new or updated customer and order data is correctly inserted into these collections.
 
 Fetch data from `finalfraudsummary`
 
-The backend should query only `finalfraudsummary` to get fraud detection results.
+* The backend should query only `finalfraudsummary` to get fraud detection results.
 
 ## Automation
 
