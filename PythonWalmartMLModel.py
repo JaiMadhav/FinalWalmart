@@ -52,14 +52,5 @@ print(f"F1-score : {f1:.4f}")
 print("\nDetailed classification report:\n")
 print(classification_report(y_test, y_pred))
 
-importances = model.feature_importances_
-feature_importance_df = pd.DataFrame({
-    'Feature': model.feature_names_in_,
-    'Importance': importances
-}).sort_values(by='Importance', ascending=False)
-
-print("\nFeature Importances:")
-print(feature_importance_df.to_string(index=False))
-
 joblib.dump(model, 'fraud_detection_model.joblib')
 print("\nModel saved to fraud_detection_model.joblib")
