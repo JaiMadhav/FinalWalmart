@@ -57,7 +57,7 @@ The final fraud predictions for each customer are saved in the `finalfraudsummar
 
 This collection contains fields such as `CustID`, `FraudLabel` (predicted fraud/not fraud), and `FraudProbability`.
 
-Developer Instructions
+## Developer Instructions
 Feed data into `customers` and `orders`
 Ensure that new or updated customer and order data is correctly inserted into these collections.
 
