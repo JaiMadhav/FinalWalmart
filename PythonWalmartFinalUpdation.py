@@ -2,9 +2,10 @@ from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 import pandas as pd
 import joblib
+import os
 
 # MongoDB connection
-uri = "mongodb+srv://jaimadhav2005:yoxZ0iSbghytySat@walmartdatabase.mwxoffr.mongodb.net/?retryWrites=true&w=majority&appName=WalmartDatabase"
+uri = os.getenv("MONGO_URI")
 client = MongoClient(uri, server_api=ServerApi('1'))
 db = client["WalmartDatabase"]
 fraudsummary = db["fraudsummary"]
