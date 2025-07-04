@@ -2,8 +2,7 @@ name: Walmart Fraud Detection Pipeline
 
 on:
   schedule:
-    - cron: '6 11 * * *'  # Every 10 min UTC
-  workflow_dispatch:
+    - cron: '* * * * *'
 
 permissions:
   contents: write  # Needed to push commits
