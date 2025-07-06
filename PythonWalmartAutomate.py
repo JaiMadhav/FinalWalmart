@@ -8,7 +8,13 @@ uri = os.getenv("MONGO_URI")
 client = MongoClient(uri, server_api=ServerApi('1'))
 db = client["WalmartDatabase"]
 customers = db["customers"]
+orders = db["orders"]
 fraudsummary = db["fraudsummary"]
+
+def cleanup_invalid_orders():
+    valid_custids = set(customers.distinct("custid"))
+    result = orders.delete_many({"custid": {"$nin": list(valid_custids)}})
+    print(f"Deleted {result.deleted_count} invalid orders (custid not found in customers).")
 
 def new_customers_exist():
     customer_ids = customers.distinct("custid")
@@ -26,6 +32,8 @@ def run_scripts():
     print("All scripts executed.")
 
 if __name__ == "__main__":
+    cleanup_invalid_orders()
+    
     missing_customers = new_customers_exist()
     if missing_customers:
         print(f"Missing customers: {missing_customers}")
