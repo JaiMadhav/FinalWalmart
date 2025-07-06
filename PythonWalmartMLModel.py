@@ -26,7 +26,7 @@ X = df[FEATURE_COLUMNS]
 y = df[TARGET_COLUMN].astype(int)
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
+    X, y, test_size=0.3, random_state=42
 )
 
 model = RandomForestClassifier(n_estimators=100, random_state=42)
@@ -49,7 +49,7 @@ print(f"Precision : {precision:.4f}")
 print(f"Recall : {recall:.4f}")
 print(f"F1-score : {f1:.4f}")
 
-print("\nDetailed classification report:\n")
+print("\nClassification report:\n")
 print(classification_report(y_test, y_pred))
 
 joblib.dump(model, 'fraud_detection_model.joblib')
