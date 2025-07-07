@@ -56,3 +56,16 @@ jobs:
           else
             echo "fraud_detection_model.joblib not found. Skipping commit."
           fi
+
+      - name: Commit deletion if model was removed
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          if [ ! -f fraud_detection_model.joblib ]; then
+            git rm -f fraud_detection_model.joblib || echo "Already removed"
+            git commit -m "Remove model due to 0 customers [Run ID: ${{ github.run_id }}]" || echo "No changes to commit"
+            git push origin main
+          else
+            echo "Model still exists, no deletion."
+          fi
