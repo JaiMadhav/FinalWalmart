@@ -29,11 +29,28 @@ def cleanup_invalid_entries():
     print(f"Deleted {result_finalfs.deleted_count} invalid finalfraudsummary records.")
 
 def run_scripts():
+    cust_count = customers.count_documents({})
+    print(f"Current customer count: {cust_count}")
+
+    if cust_count == 0:
+        print("⚠ No customers in database. Skipping all scripts.")
+        return
+    
     print(f"Running pipeline at {datetime.utcnow()}...")
+
+    # Always run DB update script
     subprocess.run(["python", "PythonWalmartDatabase.py"], check=True)
-    subprocess.run(["python", "PythonWalmartMLModel.py"], check=True)
-    subprocess.run(["python", "PythonWalmartFinalUpdation.py"], check=True)
-    print("All scripts executed successfully.")
+
+    if 1 <= cust_count <= 10:
+        print("Customer count between 1 and 10 → Skipping ML model.")
+        subprocess.run(["python", "PythonWalmartFinalUpdation.py"], check=True)
+    
+    elif cust_count > 10:
+        print("Customer count > 10 → Running full pipeline with ML model.")
+        subprocess.run(["python", "PythonWalmartMLModel.py"], check=True)
+        subprocess.run(["python", "PythonWalmartFinalUpdation.py"], check=True)
+
+    print("Pipeline execution completed.")
 
 if __name__ == "__main__":
     cleanup_invalid_entries()
