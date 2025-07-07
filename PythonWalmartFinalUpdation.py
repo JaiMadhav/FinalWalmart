@@ -13,7 +13,7 @@ customers = db["customers"]
 
 # Count customers
 cust_count = customers.count_documents({})
-use_ml = cust_count >= 50
+use_ml = cust_count > 10
 
 if use_ml:
     model = joblib.load('fraud_detection_model.joblib')
