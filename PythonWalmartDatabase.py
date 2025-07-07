@@ -143,7 +143,7 @@ for cust in customers.find():
     fraud_score = compute_fraud_score(doc)
     fraud_score = max(fraud_score, 0)
     doc['FraudScore'] = float(fraud_score)
-    doc['FraudLabel'] = fraud_score >= 12.0
+    doc['FraudLabel'] = fraud_score >= 8.0
 
     fraudsummary.update_one({'CustID': custid}, {'$set': doc}, upsert=True)
 
