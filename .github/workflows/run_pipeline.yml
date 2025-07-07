@@ -31,10 +31,28 @@ jobs:
         run: |
           python PythonWalmartAutomate.py
 
-      - name: Commit updated files
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add fraudsummary.csv fraud_detection_model.joblib
-          git commit -m "Auto update fraudsummary.csv + model [Run ID: ${{ github.run_id }}]" || echo "No changes to commit"
-          git push origin main
+- name: Commit fraudsummary.csv if it exists
+  run: |
+    git config --global user.name "github-actions[bot]"
+    git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+    if [ -f fraudsummary.csv ]; then
+      git add fraudsummary.csv
+      git commit -m "Update fraudsummary.csv [Run ID: ${{ github.run_id }}]" || echo "No changes to commit for CSV"
+      git push origin main
+    else
+      echo "fraudsummary.csv not found. Skipping commit."
+    fi
+
+- name: Commit fraud_detection_model.joblib if it exists
+  run: |
+    git config --global user.name "github-actions[bot]"
+    git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+    if [ -f fraud_detection_model.joblib ]; then
+      git add fraud_detection_model.joblib
+      git commit -m "Update model file [Run ID: ${{ github.run_id }}]" || echo "No changes to commit for model"
+      git push origin main
+    else
+      echo "fraud_detection_model.joblib not found. Skipping commit."
+    fi
