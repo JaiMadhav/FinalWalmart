@@ -1,0 +1,2 @@
+CustID,AOV,ARV,AccountAge,FraudLabel,FraudScore,Rcategory,Rconsistency,Rcycle,Rdiversity,Rhighvalueabuse,Rvague,Rwinabuse,TotalOrders,TotalReturns
+C9001,1099.25,899.0,1211,False,0.0,1,0,0,1,0,2,0,2,1
