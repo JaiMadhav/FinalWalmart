@@ -1,45 +1,36 @@
-# GitHub Actions Workflow for Walmart Fraud Detection Automation
-
 name: Walmart Fraud Detection Pipeline
 
-# Allows manual triggering from the GitHub UI
 on:
   workflow_dispatch:
 
-# Required permissions to write updated files back to the repo
 permissions:
   contents: write
 
 jobs:
   run-pipeline:
-    runs-on: ubuntu-latest  # Use latest Ubuntu environment
+    runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repository code
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          persist-credentials: true  # Retain Git credentials for later pushes
+          persist-credentials: true
 
-      # Step 2: Set up the required Python version
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      # Step 3: Install Python dependencies from requirements.txt
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
 
-      # Step 4: Run the main fraud detection automation script
       - name: Run master script
         env:
-          MONGO_URI: ${{ secrets.MONGO_URI }}  # Use secret for secure DB access
+          MONGO_URI: ${{ secrets.MONGO_URI }}
         run: |
           python PythonWalmartAutomate.py
 
-      # Step 5: Commit updated fraudsummary.csv file if it exists
       - name: Commit fraudsummary.csv if it exists
         run: |
           git config --global user.name "github-actions[bot]"
@@ -51,8 +42,8 @@ jobs:
             git push origin main
           else
             echo "fraudsummary.csv not found. Skipping commit."
+          fi
 
-      # Step 6: Commit the trained model file if it exists
       - name: Commit fraud_detection_model.joblib if it exists
         run: |
           git config --global user.name "github-actions[bot]"
@@ -64,8 +55,8 @@ jobs:
             git push origin main
           else
             echo "fraud_detection_model.joblib not found. Skipping commit."
+          fi
 
-      # Step 7: Delete and commit model file if it was removed (i.e., zero customers case)
       - name: Commit deletion if model was removed
         run: |
           git config --global user.name "github-actions[bot]"
@@ -77,3 +68,4 @@ jobs:
             git push origin main
           else
             echo "Model still exists, no deletion."
+          fi
