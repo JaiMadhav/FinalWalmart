@@ -168,11 +168,11 @@ for cust in customers.find():
         'Rconsistency': int(rconsistency)
     }
 
-    # Calculate fraud score and determine fraud label (True if score ≥ 8.0)
+    # Calculate fraud score and determine fraud label (True if score ≥ 275.0)
     fraud_score = compute_fraud_score(doc)
     fraud_score = max(fraud_score, 0)
     doc['FraudScore'] = float(fraud_score)
-    doc['FraudLabel'] = fraud_score >= 8.0
+    doc['FraudLabel'] = fraud_score >= 275.0
 
     # Upsert document into fraudsummary collection
     fraudsummary.update_one({'CustID': custid}, {'$set': doc}, upsert=True)
