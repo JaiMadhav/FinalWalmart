@@ -2,4 +2,7 @@ pymongo
 pandas
 rapidfuzz
 joblib
-scikit-learn
+bs4
+requests
+tensorflow
+keras
