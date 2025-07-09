@@ -169,7 +169,7 @@ for cust in customers.find():
     }
 
     # Calculate fraud score and determine fraud label (True if score ≥ 275.0)
-    row_score, prop_score = compute_fraud_score(doc)
+    raw_score, prop_score = compute_fraud_score(doc)
     fraud_score = raw_score + prop_score
     fraud_score = max(fraud_score, 0)
     print(f"[{custid}] Raw Score: {raw_score:.2f}, Proportional Score: {prop_score:.2f}, Total Fraud Score: {fraud_score:.2f}")
