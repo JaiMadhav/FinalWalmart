@@ -269,7 +269,7 @@ scores_train, scores_test, y_train, y_test = train_test_split(
 )
 
 # === 2. Find best threshold using F1-score ===
-precisions, recalls, thresholds_pr = precision_recall_curve(y_true, scores)
+precisions, recalls, thresholds_pr = precision_recall_curve(y_train, scores_train)
 f1_scores = 2 * (precisions * recalls) / (precisions + recalls + 1e-8)
 best_f1_idx = np.argmax(f1_scores)
 best_f1_threshold = thresholds_pr[best_f1_idx]
@@ -277,7 +277,7 @@ print(f"Best threshold by F1-score: {best_f1_threshold:.4f}")
 print(f"Best F1-score: {f1_scores[best_f1_idx]:.4f}")
 
 # === 3. Find best threshold using ROC (Youden's J statistic) ===
-fpr, tpr, thresholds_roc = roc_curve(y_true, scores)
+fpr, tpr, thresholds_roc = roc_curve(y_train, scores_train)
 j_scores = tpr - fpr
 best_j_idx = np.argmax(j_scores)
 best_roc_threshold = thresholds_roc[best_j_idx]
@@ -287,14 +287,30 @@ print(f"Best threshold by ROC (Youden's J): {best_roc_threshold:.4f}")
 # === 5. Apply the chosen threshold and evaluate ===
 # You can use either best_f1_threshold or best_roc_threshold
 chosen_threshold = best_f1_threshold
-y_pred = (scores >= chosen_threshold).astype(int)
+y_pred = (scores_test >= chosen_threshold).astype(int)
 
 print("\nClassification Report (using best F1 threshold):")
-print(classification_report(y_true, y_pred, target_names=['Not Fraud', 'Fraud']))
+print(classification_report(y_test, y_pred, target_names=['Not Fraud', 'Fraud']))
 
 print("Confusion Matrix:")
-print(confusion_matrix(y_true, y_pred))
+print(confusion_matrix(y_test, y_pred))
 
 # Calculate AUC
-auc = roc_auc_score(y_true, scores)
-print(f"AUC: {auc:.4f}")
+auc = roc_auc_score(y_test, scores_test)
+print(f"AUC: {auc:.7f}")
+
+
+# === 5. Apply the chosen threshold and evaluate ===
+# You can use either best_f1_threshold or best_roc_threshold
+chosen_threshold = best_roc_threshold
+y_pred = (scores_test >= chosen_threshold).astype(int)
+
+print("\nClassification Report (using best ROC threshold):")
+print(classification_report(y_test, y_pred, target_names=['Not Fraud', 'Fraud']))
+
+print("Confusion Matrix:")
+print(confusion_matrix(y_test, y_pred))
+
+# Calculate AUC
+auc = roc_auc_score(y_test, scores_test)
+print(f"AUC: {auc:.7f}")
