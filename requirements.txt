@@ -2,7 +2,3 @@ pymongo
 pandas
 rapidfuzz
 joblib
-bs4
-requests
-tensorflow
-keras
