@@ -6,7 +6,7 @@ import pandas as pd
 import string
 from rapidfuzz import process, fuzz
 import os, math, numpy as np
-from sklearn.metrics import precision_recall_curve, roc_curve, classification_report, confusion_matrix, roc_auc_score, roc_curve
+from sklearn.metrics import precision_recall_curve, roc_curve, classification_report, confusion_matrix, roc_auc_score
 import matplotlib.pyplot as plt
 # Load MongoDB connection string from environment variable
 uri = os.getenv("MONGO_URI")
@@ -263,6 +263,10 @@ if all_scores:
 scores = np.array(all_scores)
 y_true = np.array(labels)
 
+scores_train, scores_test, y_train, y_test = train_test_split(
+    scores, y_true, test_size=0.3, random_state=42, stratify=y_true
+)
+
 # === 2. Find best threshold using F1-score ===
 precisions, recalls, thresholds_pr = precision_recall_curve(y_true, scores)
 f1_scores = 2 * (precisions * recalls) / (precisions + recalls + 1e-8)
@@ -293,14 +297,3 @@ print(confusion_matrix(y_true, y_pred))
 # Calculate AUC
 auc = roc_auc_score(y_true, scores)
 print(f"AUC: {auc:.4f}")
-
-# (Optional) Plot ROC curve
-fpr, tpr, thresholds = roc_curve(y_true, scores)
-plt.plot(fpr, tpr, label=f'ROC curve (AUC = {auc:.2f})')
-plt.xlabel('False Positive Rate')
-plt.ylabel('True Positive Rate')
-plt.title('ROC Curve')
-plt.legend()
-plt.grid(True)
-plt.show()
-
