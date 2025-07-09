@@ -3,3 +3,4 @@ pandas
 rapidfuzz
 joblib
 scikit-learn
+matplotlib
