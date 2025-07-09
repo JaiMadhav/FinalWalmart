@@ -239,7 +239,7 @@ print("Fraud summary updated in MongoDB.")
 # After all customer fraud scores have been calculated and upserted
 
 # Fetch all fraud scores from the collection
-all_docs = list(fraudsummary.find({}, {'CustID': 1, 'FraudScore': 1, '_id': 0}))
+all_docs = list(fraudsummary.find({}, {'CustID': 1, 'FraudScore': 1,  'FraudLabel': 1, '_id': 0}))
 all_scores = [doc['FraudScore'] for doc in all_docs]
 labels = [int(doc['FraudLabel']) for doc in all_docs]
 
