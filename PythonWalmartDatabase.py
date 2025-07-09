@@ -195,6 +195,17 @@ for cust in customers.find():
     doc['FraudScore'] = float(fraud_score)
     doc['FraudLabel'] = fraud_score >= 275.0
 
+    def convert_numpy_types(d):
+    for k, v in d.items():
+        if isinstance(v, (np.bool_, np.bool8)):
+            d[k] = bool(v)
+        elif isinstance(v, (np.integer,)):
+            d[k] = int(v)
+        elif isinstance(v, (np.floating,)):
+            d[k] = float(v)
+    return d
+    doc = convert_numpy_types(doc)
+
     # Upsert document into fraudsummary collection
     fraudsummary.update_one({'CustID': custid}, {'$set': doc}, upsert=True)
 
