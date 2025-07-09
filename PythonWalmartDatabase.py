@@ -92,7 +92,7 @@ def compute_fraud_score(row):
         0.5 * safe_div(1, row['AccountAge'])
     )
 
-    return raw_score + prop_score
+    return raw_score, prop_score
 
 # Start fraud summary update process
 today = datetime.now()
@@ -169,8 +169,10 @@ for cust in customers.find():
     }
 
     # Calculate fraud score and determine fraud label (True if score ≥ 275.0)
-    fraud_score = compute_fraud_score(doc)
+    row_score, prop_score = compute_fraud_score(doc)
+    fraud_score = raw_score + prop_score
     fraud_score = max(fraud_score, 0)
+    print(f"[{custid}] Raw Score: {raw_score:.2f}, Proportional Score: {prop_score:.2f}, Total Fraud Score: {fraud_score:.2f}")
     doc['FraudScore'] = float(fraud_score)
     doc['FraudLabel'] = fraud_score >= 275.0
 
