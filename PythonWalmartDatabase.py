@@ -235,3 +235,20 @@ for cust in customers.find():
 
 # Final log message
 print("Fraud summary updated in MongoDB.")
+
+# After all customer fraud scores have been calculated and upserted
+
+# Fetch all fraud scores from the collection
+all_docs = list(fraudsummary.find({}, {'CustID': 1, 'FraudScore': 1, '_id': 0}))
+all_scores = [doc['FraudScore'] for doc in all_docs]
+
+if all_scores:
+    min_score = min(all_scores)
+    max_score = max(all_scores)
+    score_range = max_score - min_score if max_score != min_score else 1.0
+
+    print("\n--- Normalized Fraud Scores (0–100 scale) ---")
+    for doc in all_docs:
+        norm_score = 100 * (doc['FraudScore'] - min_score) / score_range
+        print(f"CustID: {doc['CustID']}, Raw Score: {doc['FraudScore']:.2f}, Normalized: {norm_score:.2f}")
+
