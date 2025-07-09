@@ -5,7 +5,7 @@ from datetime import datetime
 import pandas as pd
 import string
 from rapidfuzz import process, fuzz
-import os, math, mumpy as np
+import os, math, numpy as np
 
 # Load MongoDB connection string from environment variable
 uri = os.getenv("MONGO_URI")
