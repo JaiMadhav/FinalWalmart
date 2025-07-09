@@ -197,7 +197,7 @@ for cust in customers.find():
 
     def convert_numpy_types(d):
         for k, v in d.items():
-            if isinstance(v, (np.bool_, np.bool)):
+            if isinstance(v, np.bool_):
                 d[k] = bool(v)
             elif isinstance(v, (np.integer,)):
                 d[k] = int(v)
