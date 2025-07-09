@@ -64,7 +64,7 @@ import numpy as np
 def safe_div(a, b):
     return a / b if b != 0 else 0
 
-def fraud_score_log1p(row):
+def compute_fraud_score(row):
     # Log-transform all relevant features
     log_TotalReturns     = np.log1p(row['TotalReturns'])
     log_TotalOrders      = np.log1p(row['TotalOrders'])
