@@ -11,7 +11,7 @@ from sklearn.metrics import (
     f1_score
 )
 import joblib  # For saving the trained model
-
+print("ML MODEL PREDICTION RESULTS:")
 # Load preprocessed dataset from CSV file
 df = pd.read_csv('fraudsummary.csv')
 
