@@ -244,9 +244,10 @@ min_score = df['FraudScore'].min()
 max_score = df['FraudScore'].max()
 score_range = max_score - min_score if max_score != min_score else 1.0
 df['FraudScore'] = 100 * (df['FraudScore'] - min_score) / score_range
-
+print('BGMI123')
 # Save back to CSV
 df.to_csv('fraudsummary.csv', index=False)
+print("BGMI12344")
 
 
 # Fetch all fraud scores from the collection
