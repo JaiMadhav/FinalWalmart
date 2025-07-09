@@ -193,7 +193,7 @@ for cust in customers.find():
     fraud_score = max(fraud_score, 0)
     print(f"[{custid}] Raw Score: {raw_score:.7f}, Proportional Score: {prop_score:.7f}, Total Fraud Score: {fraud_score:.7f}")
     doc['FraudScore'] = float(fraud_score)
-    doc['FraudLabel'] = fraud_score >= 75.0
+    doc['FraudLabel'] = fraud_score >= 31.0
 
     def convert_numpy_types(d):
         for k, v in d.items():
