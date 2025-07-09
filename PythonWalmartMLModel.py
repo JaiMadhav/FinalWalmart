@@ -68,6 +68,9 @@ print(f"F1-score  : {f1:.4f}")
 # Print full classification report
 print("\nClassification report:\n")
 print(classification_report(y_test, y_pred))
+print(f"\nTotal number of predictions: {len(y_pred)}")
+print(f"Number of predicted frauds (1): {(y_pred == 1).sum()}")
+print(f"Number of predicted non-frauds (0): {(y_pred == 0).sum()}")
 
 # Save the trained model to a file for later use
 joblib.dump(model, 'fraud_detection_model.joblib')
