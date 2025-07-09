@@ -241,6 +241,7 @@ print("Fraud summary updated in MongoDB.")
 # Fetch all fraud scores from the collection
 all_docs = list(fraudsummary.find({}, {'CustID': 1, 'FraudScore': 1, '_id': 0}))
 all_scores = [doc['FraudScore'] for doc in all_docs]
+labels = [doc['FraudLabel'] for doc in all_docs]
 
 if all_scores:
     min_score = min(all_scores)
@@ -251,4 +252,62 @@ if all_scores:
     for doc in all_docs:
         norm_score = 100 * (doc['FraudScore'] - min_score) / score_range
         print(f"CustID: {doc['CustID']}, Raw Score: {doc['FraudScore']:.2f}, Normalized: {norm_score:.2f}")
+
+
+from sklearn.metrics import precision_recall_curve, roc_curve, classification_report, confusion_matrix
+import matplotlib.pyplot as plt
+
+# === 1. Load your data ===
+# Replace these with your actual data
+# Example: fraud scores from your database and true labels
+
+
+scores = np.array(all_scores)
+y_true = np.array(labels)
+
+# === 2. Find best threshold using F1-score ===
+precisions, recalls, thresholds_pr = precision_recall_curve(y_true, scores)
+f1_scores = 2 * (precisions * recalls) / (precisions + recalls + 1e-8)
+best_f1_idx = np.argmax(f1_scores)
+best_f1_threshold = thresholds_pr[best_f1_idx]
+print(f"Best threshold by F1-score: {best_f1_threshold:.4f}")
+print(f"Best F1-score: {f1_scores[best_f1_idx]:.4f}")
+
+# === 3. Find best threshold using ROC (Youden's J statistic) ===
+fpr, tpr, thresholds_roc = roc_curve(y_true, scores)
+j_scores = tpr - fpr
+best_j_idx = np.argmax(j_scores)
+best_roc_threshold = thresholds_roc[best_j_idx]
+print(f"Best threshold by ROC (Youden's J): {best_roc_threshold:.4f}")
+
+# === 4. Plot Precision-Recall and ROC Curves ===
+plt.figure(figsize=(12, 5))
+
+plt.subplot(1, 2, 1)
+plt.plot(recalls, precisions, marker='.')
+plt.title('Precision-Recall Curve')
+plt.xlabel('Recall')
+plt.ylabel('Precision')
+plt.grid(True)
+
+plt.subplot(1, 2, 2)
+plt.plot(fpr, tpr, marker='.')
+plt.title('ROC Curve')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.grid(True)
+
+plt.tight_layout()
+plt.show()
+
+# === 5. Apply the chosen threshold and evaluate ===
+# You can use either best_f1_threshold or best_roc_threshold
+chosen_threshold = best_f1_threshold
+y_pred = (scores >= chosen_threshold).astype(int)
+
+print("\nClassification Report (using best F1 threshold):")
+print(classification_report(y_true, y_pred, target_names=['Not Fraud', 'Fraud']))
+
+print("Confusion Matrix:")
+print(confusion_matrix(y_true, y_pred))
 
