@@ -6,7 +6,8 @@ import pandas as pd
 import string
 from rapidfuzz import process, fuzz
 import os, math, numpy as np
-from sklearn.metrics import precision_recall_curve, roc_curve, classification_report, confusion_matrix
+from sklearn.metrics import precision_recall_curve, roc_curve, classification_report, confusion_matrix, roc_auc_score, roc_curve
+import matplotlib.pyplot as plt
 # Load MongoDB connection string from environment variable
 uri = os.getenv("MONGO_URI")
 client = MongoClient(uri, server_api=ServerApi('1'))
