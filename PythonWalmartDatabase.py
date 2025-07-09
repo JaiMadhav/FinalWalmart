@@ -91,8 +91,13 @@ def compute_fraud_score(row):
         1.0 * safe_div(row['ARV'], row['AOV']) +
         0.5 * safe_div(1, row['AccountAge'])
     )
+    
+    sigmoid = lambda x: 1 / (1 + math.exp(-x))
 
-    return raw_score, prop_score
+    scaled_raw = sigmoid(raw_score)
+    scaled_prop = sigmoid(prop_score)
+
+    return scaled_raw, scaled_prop
 
 # Start fraud summary update process
 today = datetime.now()
@@ -172,7 +177,7 @@ for cust in customers.find():
     raw_score, prop_score = compute_fraud_score(doc)
     fraud_score = raw_score + prop_score
     fraud_score = max(fraud_score, 0)
-    print(f"[{custid}] Raw Score: {raw_score:.2f}, Proportional Score: {prop_score:.2f}, Total Fraud Score: {fraud_score:.2f}")
+    print(f"[{custid}] Raw Score: {raw_score:.7f}, Proportional Score: {prop_score:.7f}, Total Fraud Score: {fraud_score:.7f}")
     doc['FraudScore'] = float(fraud_score)
     doc['FraudLabel'] = fraud_score >= 275.0
 
