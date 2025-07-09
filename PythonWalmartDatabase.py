@@ -5,7 +5,7 @@ from datetime import datetime
 import pandas as pd
 import string
 from rapidfuzz import process, fuzz
-import os, math
+import os, math, mumpy as np
 
 # Load MongoDB connection string from environment variable
 uri = os.getenv("MONGO_URI")
@@ -59,45 +59,59 @@ def days_between(date1, date2):
     return (date2 - date1).days
 
 # Compute fraud score using a combination of raw weights and proportional risk features
-def compute_fraud_score(row):
-    safe_div = lambda n, d: n / d if d else 0  # Prevent division by zero
+import numpy as np
 
-    # Raw weighted score (based on frequency of abuse patterns and account traits)
+def safe_div(a, b):
+    return a / b if b != 0 else 0
+
+def fraud_score_log1p(row):
+    # Log-transform all relevant features
+    log_TotalReturns     = np.log1p(row['TotalReturns'])
+    log_TotalOrders      = np.log1p(row['TotalOrders'])
+    log_AOV              = np.log1p(row['AOV'])
+    log_ARV              = np.log1p(row['ARV'])
+    log_AccountAge       = np.log1p(row['AccountAge'])
+    log_Rwinabuse        = np.log1p(row['Rwinabuse'])
+    log_Rhighvalueabuse  = np.log1p(row['Rhighvalueabuse'])
+    log_Rcycle           = np.log1p(row['Rcycle'])
+    log_Rcategory        = np.log1p(row['Rcategory'])
+    log_Rvague           = np.log1p(row['Rvague'])
+    log_Rdiversity       = np.log1p(row['Rdiversity'])
+    log_Rconsistency     = np.log1p(row['Rconsistency'])
+
+    # Raw score with log1p features
     raw_score = (
-        1.0 * row['TotalReturns'] +
-       -0.2 * row['TotalOrders'] +
-       -0.001 * row['AOV'] +
-        0.002 * row['ARV'] +
-       -0.01 * row['AccountAge'] +
-        1.0 * row['Rwinabuse'] +
-        1.2 * row['Rhighvalueabuse'] +
-        0.8 * row['Rcycle'] +
-        0.5 * row['Rcategory'] +
-        0.5 * row['Rvague'] +
-        0.5 * row['Rdiversity'] +
-        0.3 * row['Rconsistency']
+        1.0 * log_TotalReturns +
+        -0.2 * log_TotalOrders +
+        -0.001 * log_AOV +
+        0.002 * log_ARV +
+        -0.01 * log_AccountAge +
+        1.0 * log_Rwinabuse +
+        1.2 * log_Rhighvalueabuse +
+        0.8 * log_Rcycle +
+        0.5 * log_Rcategory +
+        0.5 * log_Rvague +
+        0.5 * log_Rdiversity +
+        0.3 * log_Rconsistency
     )
 
-    # Proportional risk score (fraud relative to total orders or returns)
+    # Proportional score with log1p features
     prop_score = (
-        2.0 * safe_div(row['TotalReturns'], row['TotalOrders']) +
-        1.5 * safe_div(row['Rwinabuse'], row['TotalReturns']) +
-        2.0 * safe_div(row['Rhighvalueabuse'], row['TotalReturns']) +
-        1.0 * safe_div(row['Rcycle'], row['TotalReturns']) +
-        1.0 * safe_div(row['Rcategory'], row['TotalOrders']) +
-        1.0 * row['Rvague'] +
-        1.0 * row['Rdiversity'] +
-        1.0 * row['Rconsistency'] +
-        1.0 * safe_div(row['ARV'], row['AOV']) +
-        0.5 * safe_div(1, row['AccountAge'])
+        2.0 * safe_div(log_TotalReturns, log_TotalOrders) +
+        1.5 * safe_div(log_Rwinabuse, log_TotalReturns) +
+        2.0 * safe_div(log_Rhighvalueabuse, log_TotalReturns) +
+        1.0 * safe_div(log_Rcycle, log_TotalReturns) +
+        1.0 * safe_div(log_Rcategory, log_TotalOrders) +
+        1.0 * log_Rvague +
+        1.0 * log_Rdiversity +
+        1.0 * log_Rconsistency +
+        1.0 * safe_div(log_ARV, log_AOV) +
+        0.5 * safe_div(1, log_AccountAge)
     )
-    
-    sigmoid = lambda x: 1 / (1 + math.exp(-x))
 
-    scaled_raw = sigmoid(raw_score)
-    scaled_prop = sigmoid(prop_score)
-
-    return scaled_raw, scaled_prop
+    # Final fraud score
+    total_score = raw_score + prop_score
+    return raw_score, prop_score
 
 # Start fraud summary update process
 today = datetime.now()
