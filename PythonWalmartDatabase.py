@@ -241,7 +241,7 @@ print("Fraud summary updated in MongoDB.")
 # Fetch all fraud scores from the collection
 all_docs = list(fraudsummary.find({}, {'CustID': 1, 'FraudScore': 1, '_id': 0}))
 all_scores = [doc['FraudScore'] for doc in all_docs]
-labels = [doc['FraudLabel'] for doc in all_docs]
+labels = [int(doc['FraudLabel']) for doc in all_docs]
 
 if all_scores:
     min_score = min(all_scores)
