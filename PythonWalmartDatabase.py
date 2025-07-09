@@ -289,3 +289,17 @@ print(classification_report(y_true, y_pred, target_names=['Not Fraud', 'Fraud'])
 print("Confusion Matrix:")
 print(confusion_matrix(y_true, y_pred))
 
+# Calculate AUC
+auc = roc_auc_score(y_true, scores)
+print(f"AUC: {auc:.4f}")
+
+# (Optional) Plot ROC curve
+fpr, tpr, thresholds = roc_curve(y_true, scores)
+plt.plot(fpr, tpr, label=f'ROC curve (AUC = {auc:.2f})')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve')
+plt.legend()
+plt.grid(True)
+plt.show()
+
