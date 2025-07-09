@@ -239,6 +239,15 @@ for cust in customers.find():
 print("Fraud summary updated in MongoDB.")
 
 # After all customer fraud scores have been calculated and upserted
+df = pd.read_csv('fraudsummary.csv')
+min_score = df['FraudScore'].min()
+max_score = df['FraudScore'].max()
+score_range = max_score - min_score if max_score != min_score else 1.0
+df['FraudScore'] = 100 * (df['FraudScore'] - min_score) / score_range
+
+# Save back to CSV
+df.to_csv('fraudsummary.csv', index=False)
+
 
 # Fetch all fraud scores from the collection
 all_docs = list(fraudsummary.find({}, {'CustID': 1, 'FraudScore': 1,  'FraudLabel': 1, '_id': 0}))
