@@ -6,6 +6,8 @@ import pandas as pd
 import string
 from rapidfuzz import process, fuzz
 import os, numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import precision_recall_curve, roc_curve, classification_report, confusion_matrix, roc_auc_score
 
 # --- MongoDB Connection ---
 uri = os.getenv("MONGO_URI")
