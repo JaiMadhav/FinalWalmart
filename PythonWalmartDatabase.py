@@ -176,6 +176,13 @@ for cust in customers.find():
     doc['CustID'] = custid
     doc = convert_numpy_types(doc)
     fraud_docs.append(doc)
+    # --- PRINT FRAUD SCORE CALCULATION ---
+    print(f"\nCustomer: {custid}")
+    print(f"  Features: {doc}")
+    print(f"  Raw score:  {raw_score:.3f}")
+    print(f"  Prop score: {prop_score:.3f}")
+    print(f"  Total fraud score (clipped): {fraud_score:.3f}")
+
 
 # --- Normalize Scores ---
 raw_scores = [doc['RawFraudScore'] for doc in fraud_docs]
