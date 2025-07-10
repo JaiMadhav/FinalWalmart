@@ -3,6 +3,9 @@ name: Walmart Fraud Detection Pipeline
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
@@ -27,3 +30,11 @@ jobs:
           MONGO_URI: ${{ secrets.MONGO_URI }}
         run: |
           python PythonWalmartAutomate.py
+
+      - name: Commit and push CSV changes
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add finalfraudsummary_export.csv
+          git commit -m "Update fraud summary CSV [skip ci]" || echo "No changes to commit"
+          git push
