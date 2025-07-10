@@ -26,9 +26,9 @@ def run_scripts():
     cust_count = customers.count_documents({})
     print(f"Current customer count: {cust_count}")
 
-    '''if cust_count == 0:
+    if cust_count == 0:
         print("No customers found. Skipping all scripts except cleanup.")
-        return'''
+        return
 
     subprocess.run(["python", "PythonWalmartDatabase.py"], check=True)
     subprocess.run(["python", "PythonWalmartMLModel.py"], check=True)
