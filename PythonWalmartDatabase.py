@@ -3,11 +3,10 @@ from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from datetime import datetime
 import pandas as pd
+import numpy as np
 import string
+import os
 from rapidfuzz import process, fuzz
-import os, numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import precision_recall_curve, roc_curve, classification_report, confusion_matrix, roc_auc_score
 
 # --- MongoDB Connection ---
 uri = os.getenv("MONGO_URI")
@@ -26,22 +25,38 @@ fraudsummary = db["fraudsummary"]
 
 # --- Return Reason Utilities ---
 base_categories = {
-    "size issue": 1, "color issue": 1, "defective": 0, "late delivery": 2,
-    "quality issue": 2, "wrong item": 0, "missing parts": 0, "fake product": 0,
-    "packaging issue": 1, "didn't like": 3, "changed mind": 3,
-    "duplicate order": 1, "price issue": 2, "other": 2
+    'EXPIRED': 0,
+    'BROKEN': 0,
+    'NOT AS DESCRIBED': 0,
+    'DAMAGED': 0,
+    'DEFECTIVE': 0,
+    "DIDN'T WORK": 0,
+    "DIDN'T LIKE": 1,
+    "PET DIDN'T LIKE": 1,
+    'WRONG BOOK': 2,
+    "DIDN'T FIT": 1,
+    'NO LONGER NEEDED': 3,
+    'NOT NEEDED': 3,
+    'ALLERGIC REACTION': 1,
+    'WRONG SIZE': 1,
+    'TOO SMALL': 1,
+    "DIDN'T LIKE STYLE": 1
 }
 
 def normalize_reason(reason):
-    reason = reason.lower()
+    if not isinstance(reason, str):
+        return ""
+    reason = reason.upper().replace("-", " ").replace("_", " ")
     reason = reason.translate(str.maketrans('', '', string.punctuation))
     return reason.strip()
 
 def map_to_base(norm_reason):
     match, score, _ = process.extractOne(norm_reason, base_categories.keys(), scorer=fuzz.token_sort_ratio)
-    return match if score >= 70 else "other"
+    return match if score >= 70 else "OTHER"
 
 def days_between(date1, date2):
+    if pd.isnull(date1) or pd.isnull(date2):
+        return np.nan
     return (date2 - date1).days
 
 def safe_div(a, b):
@@ -115,7 +130,7 @@ for cust in customers.find():
     aov = sum(o['transaction_value'] for o in cust_orders) / total_orders if total_orders else 0
     ret_orders = [o for o in cust_orders if o.get('return_label')]
     arv = sum(o['transaction_value'] for o in ret_orders) / len(ret_orders) if ret_orders else 0
-    rwinabuse = sum(1 for o in ret_orders if days_between(o['order_date'], o['return_date']) > 75)
+    rwinabuse = sum(1 for o in ret_orders if days_between(o['order_date'], o['return_date']) > 65)
     rhighvalueabuse = sum(1 for o in ret_orders if o['transaction_value'] > 1.5 * aov)
     item_counts = {}
     for o in ret_orders:
@@ -130,7 +145,7 @@ for cust in customers.find():
         reason = o.get('return_reason', '')
         norm = normalize_reason(reason)
         base = map_to_base(norm)
-        vague = base_categories[base]
+        vague = base_categories.get(base, 2)
         reason_data.append({'BaseCategory': base, 'VaguenessScore': vague})
     if reason_data:
         df_reason = pd.DataFrame(reason_data)
@@ -171,7 +186,7 @@ score_range = max_score - min_score if max_score != min_score else 1.0
 for doc in fraud_docs:
     norm_score = 100 * (doc['RawFraudScore'] - min_score) / score_range
     doc['FraudScore'] = float(norm_score)
-    doc['FraudLabel'] = norm_score >= 50.0  # or your chosen threshold
+    # FraudLabel intentionally omitted
 
 # --- Upsert Normalized Scores to MongoDB ---
 for doc in fraud_docs:
@@ -183,53 +198,4 @@ for doc in fraud_docs:
 df = pd.DataFrame([{k: v for k, v in doc.items() if k != 'RawFraudScore'} for doc in fraud_docs])
 df.to_csv('fraudsummary.csv', index=False)
 print("Exported fraudsummary.csv successfully.")
-print("Fraud summary updated in MongoDB with normalized scores.")
-
-
-
-# --- THRESHOLD OPTIMIZATION AND EVALUATION ---
-all_scores = [doc['FraudScore'] for doc in fraud_docs]
-labels = [int(doc['FraudLabel']) for doc in fraud_docs]
-
-scores = np.array(all_scores)
-y_true = np.array(labels)
-
-# Split into train and test
-scores_train, scores_test, y_train, y_test = train_test_split(
-    scores, y_true, test_size=0.3, random_state=42, stratify=y_true
-)
-
-# Find best threshold using F1-score
-precisions, recalls, thresholds_pr = precision_recall_curve(y_train, scores_train)
-f1_scores = 2 * (precisions * recalls) / (precisions + recalls + 1e-8)
-best_f1_idx = np.argmax(f1_scores)
-best_f1_threshold = thresholds_pr[best_f1_idx]
-print(f"Best threshold by F1-score: {best_f1_threshold:.4f}")
-print(f"Best F1-score: {f1_scores[best_f1_idx]:.4f}")
-
-# Find best threshold using ROC (Youden's J)
-fpr, tpr, thresholds_roc = roc_curve(y_train, scores_train)
-j_scores = tpr - fpr
-best_j_idx = np.argmax(j_scores)
-best_roc_threshold = thresholds_roc[best_j_idx]
-print(f"Best threshold by ROC (Youden's J): {best_roc_threshold:.4f}")
-
-# Apply the chosen threshold and evaluate (F1)
-chosen_threshold = best_f1_threshold
-y_pred = (scores_test >= chosen_threshold).astype(int)
-print("\nClassification Report (using best F1 threshold):")
-print(classification_report(y_test, y_pred, target_names=['Not Fraud', 'Fraud']))
-print("Confusion Matrix:")
-print(confusion_matrix(y_test, y_pred))
-auc = roc_auc_score(y_test, scores_test)
-print(f"AUC: {auc:.7f}")
-
-# Apply the chosen threshold and evaluate (ROC)
-chosen_threshold = best_roc_threshold
-y_pred = (scores_test >= chosen_threshold).astype(int)
-print("\nClassification Report (using best ROC threshold):")
-print(classification_report(y_test, y_pred, target_names=['Not Fraud', 'Fraud']))
-print("Confusion Matrix:")
-print(confusion_matrix(y_test, y_pred))
-auc = roc_auc_score(y_test, scores_test)
-print(f"AUC: {auc:.7f}")
+print("Fraud summary updated in MongoDB with normalized scores (no FraudLabel).")
