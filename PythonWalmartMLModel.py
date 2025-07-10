@@ -2,48 +2,68 @@ import pandas as pd
 import joblib
 from pymongo import MongoClient
 import os
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
 
-print("KMEANS CLUSTER ASSIGNMENT USING SAVED MODEL (MONGODB):")
+print("KMEANS MODEL RETRAINING AND ASSIGNMENT (MONGODB):")
 
 # MongoDB connection
 uri = os.getenv("MONGO_URI")
 client = MongoClient(uri)
 db = client["WalmartDatabase"]
 fraudsummary = db["fraudsummary"]
+finalfraudsummary = db["finalfraudsummary"]
 
-# Fetch all documents from the fraudsummary collection, include all columns except MongoDB's _id
+# Fetch all documents from the fraudsummary collection
 docs = list(fraudsummary.find({}, {'_id': 0}))
 
 # Convert to DataFrame
 df = pd.DataFrame(docs)
 
-# --- If you want to include previously excluded columns in the final output, do nothing extra here.
-# They are already present in df if they exist in MongoDB.
-
-# Define features used in your trained model (update as needed)
+# Define features used in your trained model
 FEATURE_COLUMNS = [
     'TotalReturns', 'FraudScore', 'Rcategory', 'Rconsistency', 'Rdiversity',
     'Rvague', 'Rcycle', 'Rhighvalueabuse', 'Rwinabuse'
-    # Make sure this matches your actual model's features and order
 ]
 
-# Load the saved scaler and KMeans model
-scaler = joblib.load('scaler.joblib')
-kmeans = joblib.load('kmeans.joblib')
-
-# Prepare and scale features
+# Prepare features
 X = df[FEATURE_COLUMNS]
-X_scaled = scaler.transform(X)
 
-# Assign clusters using the loaded model
-clusters = kmeans.predict(X_scaled)
+# Retrain scaler and KMeans model on all current data
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# You can change n_clusters as needed
+kmeans = KMeans(n_clusters=3, n_init='auto', random_state=42)
+clusters = kmeans.fit_predict(X_scaled)
+
+# Save the updated scaler and model
+joblib.dump(scaler, 'scaler.joblib')
+joblib.dump(kmeans, 'kmeans.joblib')
+print("Scaler and KMeans model retrained and saved.")
+
+# Assign clusters to DataFrame
 df['Cluster'] = clusters
 
-# --- Save only the columns you want (including previously excluded ones) ---
-# For example, to include 'CustID', 'FraudScore', and 'Cluster':
-df[['CustID', 'FraudScore', 'Cluster']].to_csv('fraudsummary_custid_fraudscore_cluster.csv', index=False)
+# Add FraudRisk attribute
+def risk_level(cluster):
+    if cluster == 0:
+        return "high"
+    elif cluster == 1:
+        return "medium"
+    elif cluster == 2:
+        return "low"
+    else:
+        return "unknown"
 
-# Or, to include ALL columns (including those previously excluded):
-df.to_csv('fraudsummary_with_clusters.csv', index=False)
+df['FraudRisk'] = df['Cluster'].apply(risk_level)
 
-print("Cluster assignments saved to fraudsummary_with_clusters.csv")
+# Upsert into finalfraudsummary collection
+for record in df[['CustID', 'FraudScore', 'Cluster', 'FraudRisk']].to_dict(orient='records'):
+    finalfraudsummary.update_one(
+        {'CustID': record['CustID']},
+        {'$set': record},
+        upsert=True
+    )
+
+print(f"Upserted {len(df)} records into 'finalfraudsummary' with FraudRisk.")
