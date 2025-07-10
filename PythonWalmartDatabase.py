@@ -192,6 +192,7 @@ score_range = max_score - min_score if max_score != min_score else 1.0
 df_all['FraudScore'] = 100 * (df_all['RawFraudScore'] - min_score) / score_range
 
 # --- Save updated CSV (with RawFraudScore and FraudScore) ---
+csv_path = "fraudsummaryall.csv"
 df_all.to_csv(csv_path, index=False)
 print(f"Updated {csv_path} with {len(df_all)} customers and consistent normalization.")
 
