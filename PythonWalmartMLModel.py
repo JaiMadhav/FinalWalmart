@@ -15,6 +15,7 @@ customers = db["customer"]  # Collection with new customers
 
 # --- Load all customer data from fraudsummaryall.csv ---
 df_all = pd.read_csv('fraudsummaryall.csv')
+df_master = pd.read_csv('fraudsummary.csv')
 
 FEATURE_COLUMNS = [
     'TotalReturns', 'Rwinabuse', 'Rhighvalueabuse', 'Rcycle', 'Rcategory',
@@ -41,7 +42,7 @@ if df_new.empty:
     exit()
 
 # --- Only process customers not already in master ---
-master_custids = set(df_all['CustID'])
+master_custids = set(df_master['CustID'])
 df_new = df_new[~df_new['CustID'].isin(master_custids)]
 
 if df_new.empty:
