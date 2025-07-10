@@ -47,17 +47,6 @@ def reset_files_if_no_data():
         except Exception as e:
             print(f"Error clearing CSV: {e}")
 
-        # Delete the ML model file if it exists to avoid stale predictions
-        model_path = "fraud_detection_model.joblib"
-        if os.path.exists(model_path):
-            os.remove(model_path)
-            print("Deleted existing ML model file.")
-        else:
-            print("ML model file not found. No need to delete.")
-
-        # Exit script execution since there is no data to process
-        exit()
-
 # Main function to run pipeline scripts based on customer volume
 def run_scripts():
     cust_count = customers.count_documents({})
@@ -71,16 +60,10 @@ def run_scripts():
     # Step 1: Import data from raw sources and update MongoDB
     subprocess.run(["python", "PythonWalmartDatabase.py"], check=True)
 
-    # Step 2: Decide pipeline path based on customer volume
-    if 1 <= cust_count <= 10:
-        print("Customer count between 1 and 10 → Skipping ML model.")
-        # With few records, avoid training a weak ML model; only update database
-        subprocess.run(["python", "PythonWalmartFinalUpdation.py"], check=True)
-    else:
-        print("Customer count > 10 → Running full pipeline including ML model.")
-        # Run ML model training followed by MongoDB update
-        subprocess.run(["python", "PythonWalmartMLModel.py"], check=True)
-        subprocess.run(["python", "PythonWalmartFinalUpdation.py"], check=True)
+    # Step 2: Always run all scripts if there is at least 1 customer
+    print("Running full pipeline including ML model (regardless of customer count).")
+    subprocess.run(["python", "PythonWalmartMLModel.py"], check=True)
+    subprocess.run(["python", "PythonWalmartFinalUpdation.py"], check=True)
 
     print("Pipeline completed.")
 
