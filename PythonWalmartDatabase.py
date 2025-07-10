@@ -205,8 +205,13 @@ master_custids = set(df_master['CustID'])
 for _, row in df_new.iterrows():
     custid = row['CustID']
     if custid not in master_custids:
-        # Get full, up-to-date customer record from df_all
+        # Always get the latest record for this customer
         record = df_all[df_all['CustID'] == custid].iloc[0].to_dict()
-        fraudsummary.update_one({'CustID': custid}, {'$set': record}, upsert=True)
+        fraudsummary.update_one(
+            {'CustID': custid},
+            {'$set': record},
+            upsert=True
+        )
+
 
 print("All done!")
