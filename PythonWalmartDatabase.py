@@ -54,6 +54,18 @@ def map_to_base(norm_reason):
     match, score, _ = process.extractOne(norm_reason, base_categories.keys(), scorer=fuzz.token_sort_ratio)
     return match if score >= 70 else "OTHER"
 
+def normalize_category(cat):
+    if not isinstance(cat, str):
+        return ""
+    cat = cat.upper().replace("-", " ").replace("_", " ")
+    cat = cat.translate(str.maketrans('', '', string.punctuation))
+    return cat.strip()
+
+def map_to_base_category(norm_cat):
+    match, score, _ = process.extractOne(norm_cat, base_product_categories, scorer=fuzz.token_sort_ratio)
+    return match if score >= 70 else "OTHER"
+
+
 def days_between(date1, date2):
     if pd.isnull(date1) or pd.isnull(date2):
         return np.nan
@@ -138,7 +150,12 @@ for cust in customers.find():
         if iid:
             item_counts[iid] = item_counts.get(iid, 0) + 1
     rcycle = sum(1 for v in item_counts.values() if v > 1)
-    categories = set(o.get('return_category') for o in ret_orders if o.get('return_category'))
+    categories = set(
+    map(
+        map_to_base_category,
+        [normalize_category(o.get('return_category', '')) for o in ret_orders if o.get('return_category')]
+    )
+)
     rcategory = len(categories)
     reason_data = []
     for o in ret_orders:
