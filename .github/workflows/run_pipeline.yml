@@ -31,10 +31,12 @@ jobs:
         run: |
           python PythonWalmartAutomate.py
 
-      - name: Commit and push CSV changes
+      # Commit and push both output CSVs
+      - name: Commit and push updated CSVs
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
-          git add finalfraudsummary_export.csv
-          git commit -m "Update fraud summary CSV [skip ci]" || echo "No changes to commit"
+          git add finalfraudsummary_export.csv fraudsummaryall.csv
+          git status
+          git commit -m "Update fraud summary CSVs [skip ci]" || echo "No changes to commit"
           git push
