@@ -19,8 +19,8 @@ docs = list(fraudsummary.find({}, {'_id': 0}))
 df_new = pd.DataFrame(docs)
 
 FEATURE_COLUMNS = [
-    'TotalReturns', 'FraudScore', 'Rcategory', 'Rconsistency', 'Rdiversity',
-    'Rvague', 'Rcycle', 'Rhighvalueabuse', 'Rwinabuse'
+    'TotalReturns', 'Rwinabuse', 'Rhighvalueabuse', 'Rcycle', 'Rcategory',
+ 'Rvague', 'Rdiversity', 'Rconsistency', 'FraudScore'
 ]
 
 # Prepare and scale new customer data
