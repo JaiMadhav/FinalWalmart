@@ -43,7 +43,7 @@ if df_new.empty:
 
 # --- Only process customers not already in master ---
 master_custids = set(df_master['CustID'])
-df_new = df_new[~df_new['CustID'].isin(master_custids)]
+df_new = df_new[~df_new['custid'].isin(master_custids)]
 
 if df_new.empty:
     print("All new customers already exist in master. Nothing to process.")
@@ -74,6 +74,5 @@ for record in df_new.to_dict(orient='records'):
         {'$set': record},
         upsert=True
     )
-
 
 print(f"Processed and upserted {len(df_new)} NEW customer records into 'finalfraudsummary' with clusters and FraudRisk.")
