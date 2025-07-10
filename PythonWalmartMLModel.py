@@ -2,10 +2,6 @@ import pandas as pd
 import joblib
 from pymongo import MongoClient
 import os
-from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
-
-print("KMEANS MODEL RETRAINING AND ASSIGNMENT (MONGODB):")
 
 # MongoDB connection
 uri = os.getenv("MONGO_URI")
@@ -14,38 +10,27 @@ db = client["WalmartDatabase"]
 fraudsummary = db["fraudsummary"]
 finalfraudsummary = db["finalfraudsummary"]
 
-# Fetch all documents from the fraudsummary collection
+# Load saved scaler and KMeans model
+scaler = joblib.load('scaler.joblib')
+kmeans = joblib.load('kmeans.joblib')
+
+# Fetch new customer(s) from fraudsummary (customize this query as needed)
 docs = list(fraudsummary.find({}, {'_id': 0}))
+df_new = pd.DataFrame(docs)
 
-# Convert to DataFrame
-df = pd.DataFrame(docs)
-
-# Define features used in your trained model
 FEATURE_COLUMNS = [
     'TotalReturns', 'FraudScore', 'Rcategory', 'Rconsistency', 'Rdiversity',
     'Rvague', 'Rcycle', 'Rhighvalueabuse', 'Rwinabuse'
 ]
 
-# Prepare features
-X = df[FEATURE_COLUMNS]
+# Prepare and scale new customer data
+X_new = df_new[FEATURE_COLUMNS]
+X_new_scaled = scaler.transform(X_new)
 
-# Retrain scaler and KMeans model on all current data
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
+# Predict clusters for new customers using saved model
+clusters = kmeans.predict(X_new_scaled)
+df_new['Cluster'] = clusters
 
-# You can change n_clusters as needed
-kmeans = KMeans(n_clusters=3, n_init='auto', random_state=42)
-clusters = kmeans.fit_predict(X_scaled)
-
-# Save the updated scaler and model
-joblib.dump(scaler, 'scaler.joblib')
-joblib.dump(kmeans, 'kmeans.joblib')
-print("Scaler and KMeans model retrained and saved.")
-
-# Assign clusters to DataFrame
-df['Cluster'] = clusters
-
-# Add FraudRisk attribute
 def risk_level(cluster):
     if cluster == 0:
         return "high"
@@ -56,14 +41,14 @@ def risk_level(cluster):
     else:
         return "unknown"
 
-df['FraudRisk'] = df['Cluster'].apply(risk_level)
+df_new['FraudRisk'] = df_new['Cluster'].apply(risk_level)
 
-# Upsert into finalfraudsummary collection
-for record in df[['CustID', 'FraudScore', 'Cluster', 'FraudRisk']].to_dict(orient='records'):
+# Upsert results into finalfraudsummary collection
+for record in df_new[['CustID', 'FraudScore', 'Cluster', 'FraudRisk']].to_dict(orient='records'):
     finalfraudsummary.update_one(
         {'CustID': record['CustID']},
         {'$set': record},
         upsert=True
     )
 
-print(f"Upserted {len(df)} records into 'finalfraudsummary' with FraudRisk.")
+print(f"Processed and upserted {len(df_new)} records into 'finalfraudsummary' with assigned clusters and FraudRisk.")
