@@ -12,6 +12,7 @@ client = MongoClient(uri)
 db = client["WalmartDatabase"]
 customers = db["customers"]         # All customers collection
 orders = db["orders"]               # Orders collection
+fraudsummary = db["fraudsummary"]
 
 # --- Helper Functions (as before) ---
 base_categories = {
