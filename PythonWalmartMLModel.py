@@ -68,11 +68,12 @@ def risk_level(cluster):
 df_new['FraudRisk'] = df_new['Cluster'].apply(risk_level)
 
 # --- Upsert only new customers into finalfraudsummary collection ---
-for record in df_new[['CustID', 'FraudScore', 'Cluster', 'FraudRisk']].to_dict(orient='records'):
+for record in df_new.to_dict(orient='records'):
     finalfraudsummary.update_one(
         {'CustID': record['CustID']},
         {'$set': record},
         upsert=True
     )
+
 
 print(f"Processed and upserted {len(df_new)} NEW customer records into 'finalfraudsummary' with clusters and FraudRisk.")
