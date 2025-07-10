@@ -1,51 +1,34 @@
-# --- Imports ---
-from pymongo.mongo_client import MongoClient
-from pymongo.server_api import ServerApi
-from datetime import datetime
 import pandas as pd
 import numpy as np
+from pymongo import MongoClient
+from datetime import datetime
 import string
-import os
 from rapidfuzz import process, fuzz
+import os
 
 # --- MongoDB Connection ---
 uri = os.getenv("MONGO_URI")
-client = MongoClient(uri, server_api=ServerApi('1'))
-try:
-    client.admin.command('ping')
-    print("Successfully connected to MongoDB!")
-except Exception as e:
-    print(f"Connection failed: {e}")
-    exit()
-
+client = MongoClient(uri)
 db = client["WalmartDatabase"]
-customers = db["customers"]
-orders = db["orders"]
-fraudsummary = db["fraudsummary"]
+customers = db["customers"]         # All customers collection
+orders = db["orders"]               # Orders collection
 
-# --- Return Reason Utilities ---
+# --- Helper Functions (as before) ---
 base_categories = {
-    'EXPIRED': 0,
-    'BROKEN': 0,
-    'NOT AS DESCRIBED': 0,
-    'DAMAGED': 0,
-    'DEFECTIVE': 0,
-    "DIDN'T WORK": 0,
-    "DIDN'T LIKE": 1,
-    "PET DIDN'T LIKE": 1,
-    'WRONG BOOK': 2,
-    "DIDN'T FIT": 1,
-    'NO LONGER NEEDED': 3,
-    'NOT NEEDED': 3,
-    'ALLERGIC REACTION': 1,
-    'WRONG SIZE': 1,
-    'TOO SMALL': 1,
-    "DIDN'T LIKE STYLE": 1
+    'EXPIRED': 0, 'BROKEN': 0, 'NOT AS DESCRIBED': 0, 'DAMAGED': 0, 'DEFECTIVE': 0,
+    "DIDN'T WORK": 0, "DIDN'T LIKE": 1, "PET DIDN'T LIKE": 1, 'WRONG BOOK': 2,
+    "DIDN'T FIT": 1, 'NO LONGER NEEDED': 3, 'NOT NEEDED': 3, 'ALLERGIC REACTION': 1,
+    'WRONG SIZE': 1, 'TOO SMALL': 1, "DIDN'T LIKE STYLE": 1
 }
+base_product_categories = [
+    "ELECTRONICS", "CLOTHING", "BOOKS", "TOYS", "HOME", "GROCERY", "BEAUTY",
+    "SPORTS", "AUTOMOTIVE", "FURNITURE", "JEWELRY", "BABY", "OFFICE",
+    "PHARMACY", "AUTO", "PET", "HOME_IMPROVEMENT", "APPLIANCES", "CLEANING", 
+    "COFFEE_APPLIANCES", "SEASONAL", "BEDDING", "OTHER"
+]
 
 def normalize_reason(reason):
-    if not isinstance(reason, str):
-        return ""
+    if not isinstance(reason, str): return ""
     reason = reason.upper().replace("-", " ").replace("_", " ")
     reason = reason.translate(str.maketrans('', '', string.punctuation))
     return reason.strip()
@@ -55,8 +38,7 @@ def map_to_base(norm_reason):
     return match if score >= 70 else "OTHER"
 
 def normalize_category(cat):
-    if not isinstance(cat, str):
-        return ""
+    if not isinstance(cat, str): return ""
     cat = cat.upper().replace("-", " ").replace("_", " ")
     cat = cat.translate(str.maketrans('', '', string.punctuation))
     return cat.strip()
@@ -65,14 +47,11 @@ def map_to_base_category(norm_cat):
     match, score, _ = process.extractOne(norm_cat, base_product_categories, scorer=fuzz.token_sort_ratio)
     return match if score >= 70 else "OTHER"
 
-
 def days_between(date1, date2):
-    if pd.isnull(date1) or pd.isnull(date2):
-        return np.nan
+    if pd.isnull(date1) or pd.isnull(date2): return np.nan
     return (date2 - date1).days
 
-def safe_div(a, b):
-    return a / b if b != 0 else 0
+def safe_div(a, b): return a / b if b != 0 else 0
 
 def compute_fraud_score(row):
     log_TotalReturns     = np.log1p(row['TotalReturns'])
@@ -116,46 +95,38 @@ def compute_fraud_score(row):
         0.5 * safe_div(1, log_AccountAge)
     )
 
-    total_score = raw_score + prop_score
-    return raw_score, prop_score
+    return float(max(raw_score + prop_score, 0))
 
-def convert_numpy_types(d):
-    for k, v in d.items():
-        if isinstance(v, np.bool_):
-            d[k] = bool(v)
-        elif isinstance(v, (np.integer,)):
-            d[k] = int(v)
-        elif isinstance(v, (np.floating,)):
-            d[k] = float(v)
-    return d
+# --- Load master dataset from CSV (no raw fraud score) ---
+csv_path = 'fraudsummary.csv'
+df_master = pd.read_csv(csv_path)
 
-# --- Main Calculation and Normalization ---
+# --- Process new customers from MongoDB ---
 today = datetime.now()
 fraud_docs = []
 
-for cust in customers.find():
+for cust in customers.find({}, {'_id': 0}):
     custid = cust['custid']
-    account_age = days_between(cust['createdDate'], today)
+    account_age = days_between(cust.get('createdDate'), today)
     cust_orders = list(orders.find({'custid': custid}))
     total_orders = len(cust_orders)
     total_returns = sum(1 for o in cust_orders if o.get('return_label'))
     aov = sum(o['transaction_value'] for o in cust_orders) / total_orders if total_orders else 0
     ret_orders = [o for o in cust_orders if o.get('return_label')]
     arv = sum(o['transaction_value'] for o in ret_orders) / len(ret_orders) if ret_orders else 0
-    rwinabuse = sum(1 for o in ret_orders if days_between(o['order_date'], o['return_date']) > 65)
+    rwinabuse = sum(1 for o in ret_orders if days_between(o.get('order_date'), o.get('return_date')) > 65)
     rhighvalueabuse = sum(1 for o in ret_orders if o['transaction_value'] > 1.5 * aov)
     item_counts = {}
     for o in ret_orders:
         iid = o.get('return_item_id')
-        if iid:
-            item_counts[iid] = item_counts.get(iid, 0) + 1
+        if iid: item_counts[iid] = item_counts.get(iid, 0) + 1
     rcycle = sum(1 for v in item_counts.values() if v > 1)
     categories = set(
-    map(
-        map_to_base_category,
-        [normalize_category(o.get('return_category', '')) for o in ret_orders if o.get('return_category')]
+        map(
+            map_to_base_category,
+            [normalize_category(o.get('return_category', '')) for o in ret_orders if o.get('return_category')]
+        )
     )
-)
     rcategory = len(categories)
     reason_data = []
     for o in ret_orders:
@@ -187,38 +158,53 @@ for cust in customers.find():
         'Rdiversity': int(rdiversity),
         'Rconsistency': int(rconsistency)
     }
-    raw_score, prop_score = compute_fraud_score(doc)
-    fraud_score = max(raw_score + prop_score, 0)
-    doc['RawFraudScore'] = float(fraud_score)
-    doc['CustID'] = custid
-    doc = convert_numpy_types(doc)
+    doc['RawFraudScore'] = compute_fraud_score(doc)
     fraud_docs.append(doc)
-    # --- PRINT FRAUD SCORE CALCULATION ---
-    print(f"\nCustomer: {custid}")
-    print(f"  Features: {doc}")
-    print(f"  Raw score:  {raw_score:.3f}")
-    print(f"  Prop score: {prop_score:.3f}")
-    print(f"  Total fraud score (clipped): {fraud_score:.3f}")
 
+# --- Convert new customers to DataFrame ---
+df_new = pd.DataFrame(fraud_docs)
 
-# --- Normalize Scores ---
-min_score = 0.0
-max_score = 33.884774795097876
+# --- Compute raw fraud score for master if not present ---
+feature_cols = [
+    'TotalOrders', 'TotalReturns', 'AOV', 'ARV', 'AccountAge',
+    'Rwinabuse', 'Rhighvalueabuse', 'Rcycle', 'Rcategory',
+    'Rvague', 'Rdiversity', 'Rconsistency'
+]
+
+if 'RawFraudScore' not in df_master.columns:
+    df_master['RawFraudScore'] = df_master[feature_cols].apply(lambda row: compute_fraud_score(row), axis=1)
+
+# --- Combine all customers ---
+for col in df_new.columns:
+    if col not in df_master.columns:
+        df_master[col] = np.nan
+for col in df_master.columns:
+    if col not in df_new.columns:
+        df_new[col] = np.nan
+df_new = df_new[df_master.columns]
+df_all = pd.concat([df_master, df_new], ignore_index=True)
+
+# --- Compute new min/max and normalize ---
+min_score = df_all['RawFraudScore'].min()
+max_score = df_all['RawFraudScore'].max()
 score_range = max_score - min_score if max_score != min_score else 1.0
 
-for doc in fraud_docs:
-    norm_score = 100 * (doc['RawFraudScore'] - min_score) / score_range
-    doc['FraudScore'] = float(norm_score)
-    # FraudLabel intentionally omitted
+df_all['FraudScore'] = 100 * (df_all['RawFraudScore'] - min_score) / score_range
 
-# --- Upsert Normalized Scores to MongoDB ---
-for doc in fraud_docs:
-    doc_to_upsert = doc.copy()
-    doc_to_upsert.pop('RawFraudScore', None)
-    fraudsummary.update_one({'CustID': doc['CustID']}, {'$set': doc_to_upsert}, upsert=True)
+# --- Save updated CSV (with RawFraudScore and FraudScore) ---
+df_all.to_csv(csv_path, index=False)
+print(f"Updated {csv_path} with {len(df_all)} customers and consistent normalization.")
 
-# --- Export to CSV ---
-df = pd.DataFrame([{k: v for k, v in doc.items() if k != 'RawFraudScore'} for doc in fraud_docs])
-df.to_csv('fraudsummary.csv', index=False)
-print("Exported fraudsummary.csv successfully.")
-print("Fraud summary updated in MongoDB with normalized scores (no FraudLabel).")
+# --- (Optional) Update MongoDB with normalized scores for new customers ---
+# Get set of all CustIDs in master
+master_custids = set(df_master['CustID'])
+
+# Loop through new customers
+for _, row in df_new.iterrows():
+    custid = row['CustID']
+    if custid not in master_custids:
+        # Get full, up-to-date customer record from df_all
+        record = df_all[df_all['CustID'] == custid].iloc[0].to_dict()
+        fraudsummary.update_one({'CustID': custid}, {'$set': record}, upsert=True)
+
+print("All done!")
