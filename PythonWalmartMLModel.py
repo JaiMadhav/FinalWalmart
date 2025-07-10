@@ -1,77 +1,49 @@
-# Import necessary libraries
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import (
-    confusion_matrix,
-    classification_report,
-    accuracy_score,
-    precision_score,
-    recall_score,
-    f1_score
-)
-import joblib  # For saving the trained model
-print("ML MODEL PREDICTION RESULTS:")
-# Load preprocessed dataset from CSV file
-df = pd.read_csv('fraudsummary.csv')
+import joblib
+from pymongo import MongoClient
+import os
 
-# Define input features used for training the model
+print("KMEANS CLUSTER ASSIGNMENT USING SAVED MODEL (MONGODB):")
+
+# MongoDB connection
+uri = os.getenv("MONGO_URI")
+client = MongoClient(uri)
+db = client["WalmartDatabase"]
+fraudsummary = db["fraudsummary"]
+
+# Fetch all documents from the fraudsummary collection, include all columns except MongoDB's _id
+docs = list(fraudsummary.find({}, {'_id': 0}))
+
+# Convert to DataFrame
+df = pd.DataFrame(docs)
+
+# --- If you want to include previously excluded columns in the final output, do nothing extra here.
+# They are already present in df if they exist in MongoDB.
+
+# Define features used in your trained model (update as needed)
 FEATURE_COLUMNS = [
-    'TotalOrders', 'TotalReturns',
-    'AOV', 'ARV', 'AccountAge', 'Rwinabuse', 'Rhighvalueabuse',
-    'Rcycle', 'Rcategory',
-    'Rvague', 'Rconsistency', 'Rdiversity',
-    'FraudScore'
+    'TotalReturns', 'FraudScore', 'Rcategory', 'Rconsistency', 'Rdiversity',
+    'Rvague', 'Rcycle', 'Rhighvalueabuse', 'Rwinabuse'
+    # Make sure this matches your actual model's features and order
 ]
 
-# Define target column (label) for classification
-TARGET_COLUMN = 'FraudLabel'
+# Load the saved scaler and KMeans model
+scaler = joblib.load('scaler.joblib')
+kmeans = joblib.load('kmeans.joblib')
 
-# Split the dataset into input features (X) and target labels (y)
+# Prepare and scale features
 X = df[FEATURE_COLUMNS]
-y = df[TARGET_COLUMN].astype(int)  # Ensure binary classification (0 or 1)
+X_scaled = scaler.transform(X)
 
-# Split data into training and testing sets (70% training, 30% testing)
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.3, random_state=42
-)
+# Assign clusters using the loaded model
+clusters = kmeans.predict(X_scaled)
+df['Cluster'] = clusters
 
-# Initialize Random Forest model with 100 decision trees
-model = RandomForestClassifier(n_estimators=100, random_state=42)
+# --- Save only the columns you want (including previously excluded ones) ---
+# For example, to include 'CustID', 'FraudScore', and 'Cluster':
+df[['CustID', 'FraudScore', 'Cluster']].to_csv('fraudsummary_custid_fraudscore_cluster.csv', index=False)
 
-# Train the model on training data
-model.fit(X_train, y_train)
+# Or, to include ALL columns (including those previously excluded):
+df.to_csv('fraudsummary_with_clusters.csv', index=False)
 
-# Make predictions on the test set
-y_pred = model.predict(X_test)
-
-# Get the probability of fraud (label=1)
-y_prob = model.predict_proba(X_test)[:, 1]
-
-# Compute and display the confusion matrix
-cm = confusion_matrix(y_test, y_pred)
-print("\nConfusion Matrix:")
-print(cm)
-
-# Calculate evaluation metrics
-accuracy = accuracy_score(y_test, y_pred)
-precision = precision_score(y_test, y_pred, zero_division=0)
-recall = recall_score(y_test, y_pred, zero_division=0)
-f1 = f1_score(y_test, y_pred, zero_division=0)
-
-# Print metric results
-print(f"\nAccuracy  : {accuracy:.4f}")
-print(f"Precision : {precision:.4f}")
-print(f"Recall    : {recall:.4f}")
-print(f"F1-score  : {f1:.4f}")
-
-# Print full classification report
-print("\nClassification report:\n")
-print(classification_report(y_test, y_pred))
-print(f"\nTotal number of predictions: {len(y_pred)}")
-print(f"Number of predicted frauds (1): {(y_pred == 1).sum()}")
-print(f"Number of predicted non-frauds (0): {(y_pred == 0).sum()}")
-
-# Save the trained model to a file for later use
-joblib.dump(model, 'fraud_detection_model.joblib')
-print("\nModel saved to fraud_detection_model.joblib")
+print("Cluster assignments saved to fraudsummary_with_clusters.csv")
