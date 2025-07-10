@@ -35,44 +35,41 @@ joblib.dump(scaler, 'scaler.joblib')
 joblib.dump(kmeans, 'kmeans.joblib')
 
 # --- Load new customers from MongoDB ---
-docs = list(customers.find({}, {'_id': 0}))
-df_new = pd.DataFrame(docs)
-if df_new.empty:
-    print("No new customers found. Exiting.")
-    exit()
-
-# --- Only process customers not already in master ---
 master_custids = set(df_master['CustID'])
-df_new = df_new[~df_new['custid'].isin(master_custids)]
-
+df_new = df_all[~df_all['CustID'].isin(master_custids)]
 if df_new.empty:
-    print("All new customers already exist in master. Nothing to process.")
-    exit()
+    print("No new customers to process.")
+else:
+    # --- Predict clusters for new customers ---
+    X_new = df_new[FEATURE_COLUMNS]
+    X_new_scaled = scaler.transform(X_new)
+    clusters_new = kmeans.predict(X_new_scaled)
+    df_new['Cluster'] = clusters_new
 
-# --- Scale and predict cluster for new customers ---
-X_new = df_new[FEATURE_COLUMNS]
-X_new_scaled = scaler.transform(X_new)
-clusters_new = kmeans.predict(X_new_scaled)
-df_new['Cluster'] = clusters_new
+    def risk_level(cluster):
+        if cluster == 0:
+            return "high"
+        elif cluster == 1:
+            return "medium"
+        elif cluster == 2:
+            return "low"
+        else:
+            return "unknown"
 
-def risk_level(cluster):
-    if cluster == 0:
-        return "high"
-    elif cluster == 1:
-        return "medium"
-    elif cluster == 2:
-        return "low"
-    else:
-        return "unknown"
+    df_new['FraudRisk'] = df_new['Cluster'].apply(risk_level)
 
-df_new['FraudRisk'] = df_new['Cluster'].apply(risk_level)
+    # --- Save predictions for new customers ---
+    # Example: Save to CSV
+    df_new.to_csv('new_customers_predictions.csv', index=False)
 
-# --- Upsert only new customers into finalfraudsummary collection ---
-for record in df_new.to_dict(orient='records'):
-    finalfraudsummary.update_one(
-        {'CustID': record['CustID']},
-        {'$set': record},
-        upsert=True
-    )
+    # Or upsert to MongoDB if needed
+    for record in df_new.to_dict(orient='records'):
+        finalfraudsummary.update_one(
+            {'CustID': record['CustID']},
+            {'$set': record},
+            upsert=True
+        )
 
+    print(f"Predicted and saved {len(df_new)} new customers.")
+    
 print(f"Processed and upserted {len(df_new)} NEW customer records into 'finalfraudsummary' with clusters and FraudRisk.")
