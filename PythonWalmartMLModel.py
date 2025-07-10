@@ -61,13 +61,14 @@ else:
 
     # --- Save predictions for new customers to CSV (optional) ---
     df_new.to_csv('new_customers_predictions.csv', index=False)
-
-    # --- Upsert new customers into finalfraudsummary collection ---
-    for record in df_new.to_dict(orient='records'):
+    
+    COLUMNS_TO_SAVE = ['CustID', 'FraudScore', 'Cluster', 'FraudRisk']
+    for record in df_new[COLUMNS_TO_SAVE].to_dict(orient='records'):
         finalfraudsummary.update_one(
             {'CustID': record['CustID']},
             {'$set': record},
             upsert=True
         )
+
 
     print(f"Processed and upserted {len(df_new)} NEW customer records into 'finalfraudsummary' with clusters and FraudRisk.")
