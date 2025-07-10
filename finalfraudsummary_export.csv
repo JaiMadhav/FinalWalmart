@@ -1,1 +1,2 @@
-
+CustID,Cluster,FraudRisk,FraudScore
+CUST100001,1,medium,51.2928830094442
