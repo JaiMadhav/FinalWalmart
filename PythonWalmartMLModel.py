@@ -11,7 +11,7 @@ uri = os.getenv("MONGO_URI")
 client = MongoClient(uri)
 db = client["WalmartDatabase"]
 finalfraudsummary = db["finalfraudsummary"]
-customers = db["customer"]  # Collection with new customers
+customers = db["customers"]  # Collection with new customers
 
 # --- Load all customer data from fraudsummaryall.csv ---
 df_all = pd.read_csv('fraudsummaryall.csv')
