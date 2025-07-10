@@ -34,9 +34,10 @@ kmeans.fit(X_scaled)
 joblib.dump(scaler, 'scaler.joblib')
 joblib.dump(kmeans, 'kmeans.joblib')
 
-# --- Load new customers from MongoDB ---
+# --- Identify new customers (not in master) ---
 master_custids = set(df_master['CustID'])
-df_new = df_all[~df_all['CustID'].isin(master_custids)]
+df_new = df_all[~df_all['CustID'].isin(master_custids)].copy()  # <-- .copy() prevents SettingWithCopyWarning
+
 if df_new.empty:
     print("No new customers to process.")
 else:
@@ -58,11 +59,10 @@ else:
 
     df_new['FraudRisk'] = df_new['Cluster'].apply(risk_level)
 
-    # --- Save predictions for new customers ---
-    # Example: Save to CSV
+    # --- Save predictions for new customers to CSV (optional) ---
     df_new.to_csv('new_customers_predictions.csv', index=False)
 
-    # Or upsert to MongoDB if needed
+    # --- Upsert new customers into finalfraudsummary collection ---
     for record in df_new.to_dict(orient='records'):
         finalfraudsummary.update_one(
             {'CustID': record['CustID']},
@@ -70,6 +70,4 @@ else:
             upsert=True
         )
 
-    print(f"Predicted and saved {len(df_new)} new customers.")
-    
-print(f"Processed and upserted {len(df_new)} NEW customer records into 'finalfraudsummary' with clusters and FraudRisk.")
+    print(f"Processed and upserted {len(df_new)} NEW customer records into 'finalfraudsummary' with clusters and FraudRisk.")
