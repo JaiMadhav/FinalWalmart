@@ -202,9 +202,8 @@ for cust in customers.find():
 
 
 # --- Normalize Scores ---
-raw_scores = [doc['RawFraudScore'] for doc in fraud_docs]
-min_score = min(raw_scores)
-max_score = max(raw_scores)
+min_score = 0.0
+max_score = 33.884774795097876
 score_range = max_score - min_score if max_score != min_score else 1.0
 
 for doc in fraud_docs:
