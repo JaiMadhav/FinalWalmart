@@ -34,7 +34,7 @@ def run_scripts():
 
     subprocess.run(["python", "PythonWalmartDatabase.py"], check=True)
     subprocess.run(["python", "PythonWalmartMLModel.py"], check=True)
-    subprocess.run(["python", "PythonWalmartFinalUpdation.py"], check=True)
+    subprocess.run(["python", "PythonWalmartFFSCSVExport.py"], check=True)
     print("Pipeline completed.")
 
 if __name__ == "__main__":
