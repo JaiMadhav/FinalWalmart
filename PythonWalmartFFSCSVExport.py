@@ -10,10 +10,10 @@ finalfraudsummary = db["finalfraudsummary"]
 
 # Fetch all documents (excluding MongoDB's _id field)
 docs = list(finalfraudsummary.find({}, {'_id': 0}))
-
+print("PYTHON WALMART FFS CSV EXPORT")
 # Convert to DataFrame
 df = pd.DataFrame(docs)
-
+print("Exporting finalfraudsummary collection to csv")
 # Save to CSV (all columns)
 df.to_csv('finalfraudsummary_export.csv', index=False)
 print("Exported finalfraudsummary collection to finalfraudsummary_export.csv")
