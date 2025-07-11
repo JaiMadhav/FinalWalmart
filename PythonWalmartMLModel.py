@@ -10,8 +10,8 @@ from sklearn.cluster import KMeans
 uri = os.getenv("MONGO_URI")
 client = MongoClient(uri)
 db = client["WalmartDatabase"]
-finalfraudsummary = db["finalfraudsummary"]
 customers = db["customers"]  # Collection with new customers
+finalfraudsummary = db["finalfraudsummary"]
 
 # --- Load all customer data from fraudsummaryall.csv ---
 df_all = pd.read_csv('fraudsummaryall.csv')
@@ -69,6 +69,5 @@ else:
             {'$set': record},
             upsert=True
         )
-
 
     print(f"Processed and upserted {len(df_new)} NEW customer records into 'finalfraudsummary' with clusters and FraudRisk.")
