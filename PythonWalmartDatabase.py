@@ -104,6 +104,7 @@ df_master = pd.read_csv(csv_path)
 
 # --- Process new customers from MongoDB ---
 today = datetime.now()
+print("PYTHON WALMART DATABASE SCRIPT...")
 fraud_docs = []
 
 for cust in customers.find({}, {'_id': 0}):
@@ -212,6 +213,5 @@ for _, row in df_new.iterrows():
             {'$set': record},
             upsert=True
         )
-
 
 print("All done!")
