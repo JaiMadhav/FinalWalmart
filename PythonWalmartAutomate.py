@@ -15,12 +15,18 @@ finalfraudsummary = db["finalfraudsummary"]
 
 def cleanup_invalid_entries():
     print("PYTHON WALMART AUTOMATE SCRIPT...")
+
     print("Cleaning up invalid entries")
+    
     valid_custids = set(customers.distinct("custid"))
+
+    
     result_orders = orders.delete_many({"custid": {"$nin": list(valid_custids)}})
     print(f"Deleted {result_orders.deleted_count} invalid orders.")
+    
     result_fs = fraudsummary.delete_many({"CustID": {"$nin": list(valid_custids)}})
     print(f"Deleted {result_fs.deleted_count} invalid fraudsummary records.")
+    
     result_finalfs = finalfraudsummary.delete_many({"CustID": {"$nin": list(valid_custids)}})
     print(f"Deleted {result_finalfs.deleted_count} invalid finalfraudsummary records.")
 
@@ -31,10 +37,13 @@ def run_scripts():
     if cust_count == 0:
         print("No customers found. Skipping all scripts except cleanup.")
         return
-
-    subprocess.run(["python", "PythonWalmartDatabase.py"], check=True)
-    subprocess.run(["python", "PythonWalmartMLModel.py"], check=True)
-    subprocess.run(["python", "PythonWalmartFFSCSVExport.py"], check=True)
+        
+    else:
+        subprocess.run(["python", "PythonWalmartDatabase.py"], check=True)
+        subprocess.run(["python", "PythonWalmartMLModel.py"], check=True)
+        subprocess.run(["python", "PythonWalmartFFSCSVExport.py"], check=True)
+        print("All scripts successfully completed.")
+        
     print("Pipeline completed.")
 
 if __name__ == "__main__":
