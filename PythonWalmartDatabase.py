@@ -102,7 +102,7 @@ def compute_fraud_score(row):
 csv_path = 'fraudsummary.csv'
 df_master = pd.read_csv(csv_path)
 
-# --- Process new customers from MongoDB ---
+# --- Process ALL customers from MongoDB ---
 today = datetime.now()
 print("PYTHON WALMART DATABASE SCRIPT...")
 fraud_docs = []
@@ -163,7 +163,7 @@ for cust in customers.find({}, {'_id': 0}):
     doc['RawFraudScore'] = compute_fraud_score(doc)
     fraud_docs.append(doc)
 
-# --- Convert new customers to DataFrame ---
+# --- Convert ALL customers to DataFrame ---
 df_new = pd.DataFrame(fraud_docs)
 
 # --- Compute raw fraud score for master if not present ---
@@ -176,7 +176,7 @@ feature_cols = [
 if 'RawFraudScore' not in df_master.columns:
     df_master['RawFraudScore'] = df_master[feature_cols].apply(lambda row: compute_fraud_score(row), axis=1)
 
-# --- Combine all customers ---
+# --- Combine ALL (master + new) customers ---
 for col in df_new.columns:
     if col not in df_master.columns:
         df_master[col] = np.nan
@@ -198,7 +198,6 @@ csv_path = "fraudsummaryall.csv"
 df_all.to_csv(csv_path, index=False)
 print(f"Updated {csv_path} with {len(df_all)} customers and consistent normalization.")
 
-# --- (Optional) Update MongoDB with normalized scores for new customers ---
 # Get set of all CustIDs in master
 master_custids = set(df_master['CustID'])
 
