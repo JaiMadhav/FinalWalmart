@@ -1,2 +1,0 @@
-CustID,TotalOrders,TotalReturns,AOV,ARV,AccountAge,Rwinabuse,Rhighvalueabuse,Rcycle,Rcategory,Rvague,Rdiversity,Rconsistency,FraudScore,RawFraudScore,Cluster,FraudRisk
-CUST100001,40,24,68.727,68.22333333333333,344,0,4,0,14,8,11,13,61.112812892022056,20.707939019411214,2,medium
