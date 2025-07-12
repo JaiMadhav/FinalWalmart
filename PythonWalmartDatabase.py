@@ -10,7 +10,7 @@ import os
 uri = os.getenv("MONGO_URI")
 client = MongoClient(uri)
 db = client["WalmartDatabase"]
-customers = db["customers"]         # All customers collection
+customers = db["customers"]         # Customers collection
 orders = db["orders"]               # Orders collection
 fraudsummary = db["fraudsummary"]
 
