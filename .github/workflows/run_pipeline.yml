@@ -24,8 +24,32 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
+          pip install pymongo
 
+      - name: Check customer count and handle CSVs
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+        run: |
+          python <<EOF
+          from pymongo import MongoClient
+          import os
+
+          uri = os.getenv("MONGO_URI")
+          client = MongoClient(uri)
+          db = client["WalmartDatabase"]
+          customers = db["customers"]
+          count = customers.count_documents({})
+
+          print(f"Customer count: {count}")
+
+          if count == 0:
+              print("No customers found. Emptying CSV files (except fraudsummary.csv)...")
+              for filename in ["fraudsummaryall.csv", "new_customers_predictions.csv", "finalfraudsummary_export.csv"]:
+                  with open(filename, "w") as f:
+                      f.write("")
+                      
       - name: Run master script
+        if: success()
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
         run: |
@@ -37,5 +61,5 @@ jobs:
           git config --global user.email 'github-actions@github.com'
           git add fraudsummaryall.csv new_customers_predictions.csv finalfraudsummary_export.csv || true
           git status
-          git commit -m "Update fraud CSVs only [skip ci]" || echo "No changes to commit"
+          git commit -m "Update fraud CSVs based on customer input [skip ci]" || echo "No changes to commit"
           git push
