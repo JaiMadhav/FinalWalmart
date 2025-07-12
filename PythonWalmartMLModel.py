@@ -49,3 +49,14 @@ for record in df_all[COLUMNS_TO_SAVE].to_dict(orient='records'):
     )
 
 print(f"Processed and upserted {len(df_all)} customers from 'fraudsummary' into 'finalfraudsummary'.")
+
+# --- Export full prediction data to CSV ---
+COLUMNS_TO_EXPORT = [
+    'CustID', 'TotalOrders', 'TotalReturns', 'AOV', 'ARV', 'AccountAge',
+    'Rwinabuse', 'Rhighvalueabuse', 'Rcycle', 'Rcategory', 'Rvague',
+    'Rdiversity', 'Rconsistency', 'FraudScore', 'RawFraudScore',
+    'Cluster', 'FraudRisk'
+]
+
+df_all[COLUMNS_TO_EXPORT].to_csv('new_customers_predictions.csv', index=False)
+print("Saved detailed prediction results to 'new_customers_predictions.csv'")
