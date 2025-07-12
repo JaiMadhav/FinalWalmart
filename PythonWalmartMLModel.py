@@ -35,7 +35,7 @@ clusters = kmeans.predict(X_scaled)
 df_all['Cluster'] = clusters
 
 def risk_level(cluster):
-    return {0: "high", 1: "medium", 2: "low"}.get(cluster, "unknown")
+    return {0: "high", 1: "low", 2: "medium"}.get(cluster, "unknown")
 
 df_all['FraudRisk'] = df_all['Cluster'].apply(risk_level)
 
