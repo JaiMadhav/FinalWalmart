@@ -8,12 +8,15 @@ client = MongoClient(uri)
 db = client["WalmartDatabase"]
 finalfraudsummary = db["finalfraudsummary"]
 
-# Fetch all documents (excluding MongoDB's _id field)
+# --- Load all customer records from FFS ---
 docs = list(finalfraudsummary.find({}, {'_id': 0}))
+df_all = pd.DataFrame(docs)
+
+if df_all.empty:
+    print("No records found in 'finalfraudsummary'.")
+    exit()
+  
+# --- Export to CSV ---
 print("PYTHON WALMART FFS CSV EXPORT")
-# Convert to DataFrame
-df = pd.DataFrame(docs)
-print("Exporting finalfraudsummary collection to csv")
-# Save to CSV (all columns)
-df.to_csv('finalfraudsummary_export.csv', index=False)
+df_all.to_csv('finalfraudsummary_export.csv', index=False)
 print("Exported finalfraudsummary collection to finalfraudsummary_export.csv")
