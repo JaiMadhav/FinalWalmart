@@ -107,8 +107,8 @@ today = datetime.now()
 print("PYTHON WALMART DATABASE SCRIPT...")
 fraud_docs = []
 
-for cust in customers.find({}, {'_id': 0}):
-    custid = cust['custid']
+for cust in customers.find({}):
+    custid = cust['_id']
     account_age = days_between(cust.get('createdDate'), today)
     cust_orders = list(orders.find({'custid': custid}))
     total_orders = len(cust_orders)
@@ -146,7 +146,7 @@ for cust in customers.find({}, {'_id': 0}):
         rvague = rdiversity = rconsistency = 0
 
     doc = {
-        'CustID': custid,
+        'CustID': str(custid),
         'TotalOrders': int(total_orders),
         'TotalReturns': int(total_returns),
         'AOV': float(aov),
