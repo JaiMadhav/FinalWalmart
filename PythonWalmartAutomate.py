@@ -18,9 +18,9 @@ def cleanup_invalid_entries():
 
     print("Cleaning up invalid entries")
     
-    valid_custids = set(customers.distinct("custid"))
+    # Use _id instead of custid
+    valid_custids = set(customers.distinct("_id"))
 
-    
     result_orders = orders.delete_many({"custid": {"$nin": list(valid_custids)}})
     print(f"Deleted {result_orders.deleted_count} invalid orders.")
     
